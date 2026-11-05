@@ -177,7 +177,7 @@
         <td>${esc(i.aplikasi) || '<span class="muted">—</span>'}</td>
         <td>${who}</td>
         <td class="cat-cell">${catBadge(i)}</td>
-        <td><a class="open-link" href="${esc(i.link)}" target="_blank" rel="noopener" title="Buka baris ${i.issue_no} di spreadsheet">
+        <td><a class="open-link" href="${esc(i.link)}" target="_blank" rel="noopener" title="Buka issue #${i.issue_no} di Daily Issue">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg></a></td>
       </tr>`;
     }).join("");

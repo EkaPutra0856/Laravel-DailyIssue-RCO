@@ -17,7 +17,7 @@ class RequireJson
 
     public function handle(Request $request, Closure $next): Response
     {
-        if ($request->isMethod('POST')) {
+        if (in_array($request->method(), ['POST', 'PUT', 'PATCH', 'DELETE'], true)) {
             if (! str_starts_with((string) $request->header('Content-Type'), 'application/json')) {
                 throw new WebError('Content-Type harus application/json', 415);
             }

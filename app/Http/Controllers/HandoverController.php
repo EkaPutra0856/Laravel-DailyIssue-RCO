@@ -26,7 +26,7 @@ class HandoverController extends Controller
         return response()->json($data, $status, ['Cache-Control' => 'no-store'], JSON_UNESCAPED_UNICODE);
     }
 
-    public function dashboard(): View
+    public function rekap(): View
     {
         return view('dashboard');
     }
@@ -43,8 +43,7 @@ class HandoverController extends Controller
 
     public function issues(Request $request): JsonResponse
     {
-        return self::json($this->web->issuesPayload(
-            $request->query('start'), $request->query('end'), $request->query('refresh') === '1'));
+        return self::json($this->web->issuesPayload($request->query('start'), $request->query('end')));
     }
 
     public function preview(Request $request): JsonResponse

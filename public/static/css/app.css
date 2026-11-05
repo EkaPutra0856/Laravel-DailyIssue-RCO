@@ -1,6 +1,6 @@
 :root {
   --bg: #f3f5f9; --surface: #ffffff; --surface-2: #f8fafc; --border: #e3e8ef; --text: #1b2433; --muted: #66748a;
-  --brand: #00529c; --brand-2: #0a6fd1; --brand-soft: #e6f0fa; --danger: #c62828;
+  --brand: #0a3d91; --brand-2: #2f62d6; --brand-soft: #e3ecfd; --danger: #c62828;
   --pending: #8a96a8; --pending-bg: #f1f4f8; --progress: #b58100; --progress-bg: #fff6d6;
   --done: #1e8e3e; --done-bg: #e3f4e8; --orange: #e8710a; --orange-bg: #fdeedd;
   --shadow: 0 1px 2px rgba(16,24,40,.06), 0 1px 3px rgba(16,24,40,.08);

@@ -71,7 +71,11 @@ final class Report
             $order = array_flip(Teams::ALL);
             $sorted = self::sortBy($items, fn (Issue $i) => [$order[$i->team], $i->tanggal->getTimestamp(), $i->issueNo]);
             foreach ($sorted as $i) {
-                $wait = $i->waitingExternal ? ' 🟠 <i>(menunggu eksternal)</i>' : '';
+                $wait = match (true) {
+                    $i->trouble => ' 🔴 <i>(trouble)</i>',
+                    $i->waitingExternal => ' 🟠 <i>(menunggu eksternal)</i>',
+                    default => '',
+                };
                 $lines[] = Dates::fmt($i->tanggal)." — {$i->team} — Issue {$i->issueNo}".self::app($i, $detail)
                     .' — '.Py::escape($i->label()).$wait;
             }

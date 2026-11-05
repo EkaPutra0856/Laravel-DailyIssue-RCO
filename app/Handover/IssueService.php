@@ -7,7 +7,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Log;
 
 /** Ambil issue sesuai Query dari sumber data. */
-final class IssueService
+final class IssueService implements IssueProvider
 {
     private const TAB_RE = '#^\s*issue[\s_]+([A-Za-z]+)\.?[\s_]+(\d{2}|\d{4})\s*$#i';
 

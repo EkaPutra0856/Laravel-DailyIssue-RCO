@@ -28,5 +28,8 @@ return [
         // Tujuan link "buka baris di sheet": asli (sheet sumber, butuh akses) atau transit (cermin publik)
         'link_target' => strtolower((string) env('WEB_LINK_TARGET', 'asli')),
         'transit_spreadsheet_id' => env('TRANSIT_SPREADSHEET_ID', '1UK5iVxAi8ROiUHGIjGeMLeMZAOUAh-nRRb75eb3F59A'),
+        // Web portal RCO: link "Home" di sidebar, dan asal (origin) yang boleh menampilkan halaman ini di iframe.
+        'portal_url' => env('PORTAL_URL', ''),
+        'portal_origins' => array_values(array_filter(array_map('trim', explode(',', (string) env('PORTAL_ORIGIN', ''))))),
     ],
 ];

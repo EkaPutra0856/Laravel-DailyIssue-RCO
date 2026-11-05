@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\DailyIssueController;
 use App\Http\Controllers\HandoverController;
 use App\Http\Middleware\WebPassword;
 use Illuminate\Support\Facades\Route;
@@ -7,5 +8,6 @@ use Illuminate\Support\Facades\Route;
 Route::get('/healthz', [HandoverController::class, 'healthz']);
 
 Route::middleware(WebPassword::class)->group(function () {
-    Route::get('/', [HandoverController::class, 'dashboard']);
+    Route::get('/', [DailyIssueController::class, 'page']);           // Daily Issue RCO
+    Route::get('/rekap', [HandoverController::class, 'rekap']);        // dashboard rekap + Export ke Chat
 });

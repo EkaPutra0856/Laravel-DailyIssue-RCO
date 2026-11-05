@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Handover RCO</title>
+<title>Rekap Handover – PortalRCO</title>
 <link rel="icon" href="{{ asset('static/favicon.svg') }}" type="image/svg+xml">
 <link rel="stylesheet" href="{{ asset('static/css/app.css') }}">
 </head>
@@ -23,8 +23,8 @@
     <button class="btn ghost-light" id="refresh" title="Ambil ulang dari spreadsheet (R)">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg> Refresh
     </button>
-    <a class="btn ghost-light" id="sheet-link" target="_blank" rel="noopener">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></svg> Spreadsheet
+    <a class="btn ghost-light" id="sheet-link">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg> Daily Issue
     </a>
   </div>
 </header>

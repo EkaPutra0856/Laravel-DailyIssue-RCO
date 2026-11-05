@@ -17,6 +17,7 @@ final class Issue
         public Category $category,
         public string $doneReason = '',        // "status", "pic", atau "hijau"
         public bool $waitingExternal = false,  // baris orange: menunggu tindak lanjut eksternal
+        public bool $trouble = false,          // status "trouble" dari engineer (dihitung on progress)
     ) {}
 
     /** Nama PIC untuk ditampilkan; kalau PIC kosong, nama timnya. */

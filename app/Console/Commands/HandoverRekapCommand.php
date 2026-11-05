@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Handover\CommandError;
 use App\Handover\Commands;
 use App\Handover\Dates;
+use App\Handover\IssueProvider;
 use App\Handover\IssueService;
 use App\Handover\Report;
 use App\Handover\Sources\Source;
@@ -18,7 +19,8 @@ class HandoverRekapCommand extends Command
     protected $signature = 'handover:rekap
         {perintah : perintah seperti di Telegram, mis. "/rekap Oktober 2026"}
         {--today= : anggap hari ini tanggal YYYY-MM-DD}
-        {--stats : tampilkan statistik klasifikasi}';
+        {--stats : tampilkan statistik klasifikasi}
+        {--sheet : baca dari spreadsheet asli (read-only), bukan database}';
 
     protected $description = 'Tes rekap dari terminal (tidak mengirim apa pun ke Telegram)';
 
@@ -42,7 +44,9 @@ class HandoverRekapCommand extends Command
         }
         try {
             $query = Commands::parse($text, $today);
-            [$issues, $warnings] = (new IssueService(app(Source::class)))->collect($query);
+            // Default dari database; --sheet membaca langsung spreadsheet asli (read-only) untuk perbandingan.
+            $provider = $this->option('sheet') ? new IssueService(app(Source::class)) : app(IssueProvider::class);
+            [$issues, $warnings] = $provider->collect($query);
         } catch (CommandError|SourceError $e) {
             $this->error("❌ {$e->getMessage()}");
 

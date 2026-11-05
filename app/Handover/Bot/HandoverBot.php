@@ -5,9 +5,8 @@ namespace App\Handover\Bot;
 use App\Handover\CommandError;
 use App\Handover\Commands;
 use App\Handover\Dates;
-use App\Handover\IssueService;
+use App\Handover\IssueProvider;
 use App\Handover\Report;
-use App\Handover\Sources\Source;
 use App\Handover\Sources\SourceError;
 use App\Handover\Telegram;
 use Carbon\CarbonImmutable;
@@ -102,7 +101,7 @@ final class HandoverBot
             // indikator "mengetik" tidak penting
         }
         try {
-            [$issues, $warnings] = (new IssueService(app(Source::class)))->collect($query);
+            [$issues, $warnings] = app(IssueProvider::class)->collect($query);
         } catch (SourceError $e) {
             Log::error("Akses Google: {$e->getMessage()}");
             $this->reply($chatId, "❌ Akses spreadsheet bermasalah: {$e->getMessage()}");

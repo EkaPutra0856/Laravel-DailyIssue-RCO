@@ -3,7 +3,8 @@
 namespace Tests\Feature;
 
 use App\Handover\Bot\HandoverBot;
-use App\Handover\Sources\Source;
+use App\Handover\IssueProvider;
+use App\Handover\IssueService;
 use App\Handover\Telegram;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
@@ -18,7 +19,7 @@ class BotTest extends TestCase
     {
         parent::setUp();
         config(['handover.allowed_chat_ids' => [self::CHAT]]);
-        $this->app->instance(Source::class, SampleWorkbook::source());
+        $this->app->instance(IssueProvider::class, new IssueService(SampleWorkbook::source()));
         Http::preventStrayRequests();
         Http::fake(['api.telegram.org/*' => Http::response(['ok' => true, 'result' => true])]);
     }
