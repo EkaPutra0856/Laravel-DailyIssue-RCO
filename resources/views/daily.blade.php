@@ -69,10 +69,6 @@
     <div class="chips" id="team-chips">
       @foreach ($teams as $t)<button class="chip" data-t="{{ $t }}">{{ $t }}</button>@endforeach
     </div>
-    <span class="f-label">Kategori</span>
-    <div class="chips" id="status-chips">
-      @foreach ($statuses as $k => $label)<button class="chip" data-s="{{ $k }}"><span class="dot {{ $k }}"></span>{{ $label }}</button>@endforeach
-    </div>
   </div>
   <div class="f-row">
     <input class="pill-search grow" id="q" type="search" placeholder="Cari nomor issue, aplikasi, pelapor, PIC, atau isi issue... (tekan /)">
@@ -108,7 +104,7 @@
 </section>
 
 <aside class="card side-panel">
-  <div class="panel-h"><h2 class="card-title">Per Tim</h2><span class="count">klik untuk filter</span></div>
+  <div class="panel-h"><h2 class="card-title">Per Tim</h2></div>
   <div class="teams" id="teams"></div>
   <div class="legend">
     @foreach ($statuses as $k => $label)<span><span class="dot {{ $k }}"></span> {{ $label }}</span>@endforeach

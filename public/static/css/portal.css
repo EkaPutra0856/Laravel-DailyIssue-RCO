@@ -209,10 +209,11 @@ tbody tr[data-id] { cursor: pointer; }
 .side-panel .panel-h { display: flex; align-items: baseline; gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--border); }
 .side-panel .count { color: var(--muted); font-size: 12.5px; }
 .teams { padding: 4px 18px 10px; }
-.team-row { padding: 11px 0; border-bottom: 1px dashed var(--border); cursor: pointer; }
+.team-row { padding: 11px 0; border-bottom: 1px dashed var(--border); }
 .team-row:last-child { border-bottom: 0; }
 .team-row.off { opacity: .4; }
 .team-row .tr-h { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; margin-bottom: 7px; }
+.team-row .tr-h b { white-space: nowrap; }
 .team-row .tr-h .muted { font-size: 12px; text-align: right; }
 .bar { display: flex; height: 9px; border-radius: 6px; overflow: hidden; background: #eef1f6; }
 .bar span { display: block; height: 100%; }

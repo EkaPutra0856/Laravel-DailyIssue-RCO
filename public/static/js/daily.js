@@ -214,13 +214,12 @@
   // Chip tim & kategori + panel Per Tim (bar: pending, on progress, trouble, done)
   function renderFilters() {
     $$("#team-chips .chip").forEach((b) => b.classList.toggle("on", st.teams.has(b.dataset.t)));
-    $$("#status-chips .chip").forEach((b) => b.classList.toggle("on", !st.hidden.has(b.dataset.s)));
     $("#teams").innerHTML = TEAMS.map((t) => {
       const rows = st.rows.filter((r) => r.team === t);
       const c = Object.fromEntries(Object.keys(STATUS).map((k) => [k, rows.filter((r) => r.status === k).length]));
       const tot = rows.length || 1;
       const parts = [`${c.pending} pending`, `${c.onprogress} progress`, c.trouble ? `${c.trouble} trouble` : "", `${c.done} done`].filter(Boolean);
-      return `<div class="team-row ${st.teams.has(t) ? "" : "off"}" data-t="${esc(t)}" title="Klik: tampilkan hanya ${esc(t)}. Shift+klik: tambah/kurangi">
+      return `<div class="team-row ${st.teams.has(t) ? "" : "off"}">
         <div class="tr-h"><b>${esc(t)}</b><span class="muted">${parts.join(" · ")}</span></div>
         <div class="bar">${Object.keys(STATUS).map((k) => `<span class="b-${k}" style="width:${(c[k] / tot) * 100}%"></span>`).join("")}</div>
       </div>`;
@@ -609,24 +608,11 @@
       if (st.start && st.end && st.start <= st.end) load();
     }));
     $("#month").addEventListener("change", (e) => { if (e.target.value) { setMonth(e.target.value); load(); } });
-    // Chip tim (minimal satu), chip kategori, klik panel Per Tim, reset
+    // Chip tim (minimal satu) & reset. Kategori difilter lewat kartu ringkasan; panel Per Tim hanya tampilan.
     $("#team-chips").addEventListener("click", (e) => {
       const b = e.target.closest(".chip"); if (!b) return;
       const t = b.dataset.t;
       if (st.teams.has(t) && st.teams.size > 1) st.teams.delete(t); else st.teams.add(t);
-      renderAll();
-    });
-    $("#status-chips").addEventListener("click", (e) => {
-      const b = e.target.closest(".chip"); if (!b) return;
-      const s = b.dataset.s;
-      st.hidden.has(s) ? st.hidden.delete(s) : st.hidden.add(s);
-      renderAll();
-    });
-    $("#teams").addEventListener("click", (e) => {
-      const r = e.target.closest(".team-row"); if (!r) return;
-      const t = r.dataset.t;
-      if (e.shiftKey) { if (st.teams.has(t) && st.teams.size > 1) st.teams.delete(t); else st.teams.add(t); }
-      else st.teams = st.teams.size === 1 && st.teams.has(t) ? new Set(TEAMS) : new Set([t]);
       renderAll();
     });
     $("#reset-filter").addEventListener("click", () => {
