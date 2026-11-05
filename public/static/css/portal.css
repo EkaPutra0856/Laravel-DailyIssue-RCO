@@ -148,6 +148,7 @@ tr.s-done td:first-child { box-shadow: inset 4px 0 0 #2fae62; }
 .field textarea { resize: vertical; }
 .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--blue-2); box-shadow: 0 0 0 3px rgba(47, 98, 214, .12); }
 .field .invalid { border-color: var(--danger); }
+.field .badge { justify-self: start; }
 .hint { font-weight: 400; font-size: 11.5px; color: var(--muted); min-height: 0; }
 .hint.ok { color: var(--done); }
 .hint.warn { color: #b06a00; }

@@ -4,8 +4,15 @@ Versi Laravel dari [Bot Handover – Team RCO](https://github.com/EkaPutra0856/H
 Isinya sama: **dashboard web** dan **bot Telegram** yang merekap issue dari spreadsheet
 **Issue &lt;Bulan&gt; &lt;Tahun&gt;**, yaitu pending (putih), on progress (kuning), dan done (hijau).
 
-Aturan rekap, format pesan, dan API web di-porting baris demi baris dari versi Python. Hasilnya sudah
-dicocokkan karakter demi karakter dengan versi Python memakai data asli.
+Data issue sekarang disimpan di **database MySQL**, tidak lagi di spreadsheet:
+
+- **Daily Issue RCO** (`/`): polisi mencatat issue lewat popup (status otomatis Pending), engineer
+  menindaklanjuti lewat popup (status, PIC, waktu mulai, tanggal finish, waktu selesai). Submit engineer hanya
+  bisa kalau PIC terisi dan status On Progress / Trouble / Done. Nama aplikasi otomatis mengisi Team.
+- **Rekap Handover** (`/rekap`), bot `/rekap`, dan `handover:rekap` membaca database yang sama.
+- Issue lama disalin sekali dari spreadsheet dengan `handover:import` (spreadsheet hanya dibaca).
+
+Aturan rekap dan format pesan di-porting dari versi Python dan sudah dicocokkan dengan data asli.
 
 ## Instalasi
 
@@ -31,13 +38,32 @@ cukup.
    Nilainya sama dengan `.env` versi Python. `.env` berisi token dan key, jadi **tidak ikut ke Git** dan jangan
    dikirim ke grup.
 
-4. Cek instalasi (tidak butuh Google maupun Telegram):
+4. Siapkan database MySQL (Laragon: klik **Start All**; XAMPP: Start MySQL), lalu buat database dan tabelnya:
+
+   ```powershell
+   & "C:\laragon\bin\mysql\mysql-8.0.30-winx64\bin\mysql.exe" -h 127.0.0.1 -u root -e "CREATE DATABASE IF NOT EXISTS handover_rco CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
+   php artisan migrate
+   ```
+
+   Koneksi diatur di `.env` (`DB_HOST=127.0.0.1`, `DB_DATABASE=handover_rco`, `DB_USERNAME=root`).
+
+5. Salin issue lama dari spreadsheet (sekali saja; default 3 bulan terakhir, sheet asli hanya dibaca):
+
+   ```powershell
+   php artisan handover:import
+   php artisan handover:import --sejak=2026-01 --sampai=2026-11
+   ```
+
+   Aman dijalankan ulang: baris yang sudah diimpor dilewati, isian engineer dari web tidak tertimpa
+   (kecuali pakai `--timpa`). Perintah ini juga mengisi daftar Aplikasi -> Team untuk rekomendasi.
+
+6. Cek instalasi (tes memakai database sementara di memori, tidak butuh MySQL/Google/Telegram):
 
    ```powershell
    php artisan test
    ```
 
-Database tidak dipakai. Cache dan sesi disimpan di `storage/framework` (`CACHE_STORE=file`).
+Cache dan sesi disimpan di `storage/framework` (`CACHE_STORE=file`).
 
 ## Menjalankan
 
@@ -68,6 +94,16 @@ powershell -ExecutionPolicy Bypass -File run-bot.ps1
 Bot memakai long polling, jadi tidak butuh URL publik. **Bot hanya boleh jalan di satu tempat**: satu token bot
 hanya bisa dipakai satu program, jadi matikan dulu bot versi Python (atau n8n lama). Kalau lupa, log bot
 menampilkan `Conflict: terminated by other getUpdates request`. Versi web boleh jalan bersamaan dengan versi Python.
+
+## Daily Issue di web portal
+
+- Peran tanpa login (portal sudah login): pilih Polisi/Engineer + nama di pojok kanan atas, atau portal
+  mengirimnya lewat link: `/?role=engineer&nama=Hendrik`.
+- Ditampilkan di dalam portal (iframe): pakai `/?embed=1` supaya topbar & sidebar halaman ini disembunyikan.
+  Alamat portal wajib dicantumkan di `PORTAL_ORIGIN` (contoh `http://172.18.66.243`); selain itu browser menolak
+  menampilkan halaman ini di iframe. `PORTAL_URL` dipakai untuk menu **Home** di sidebar.
+- Buka issue tertentu langsung: `/?issue=3129` (link di tabel Rekap memakai ini).
+- Catatan: tanpa login, peran hanya dibedakan di tampilan. Akses tetap dijaga oleh portal / `WEB_PASSWORD`.
 
 ## Keamanan sheet asli
 
