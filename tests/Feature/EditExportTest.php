@@ -105,7 +105,7 @@ class EditExportTest extends TestCase
         $this->assertStringContainsString('Issue &lt;pertama&gt; &amp; &quot;kutip&quot;', $sheet);
         $this->assertSame(3, substr_count($sheet, '<row '));   // judul + 2 issue Oktober
         $this->assertStringContainsString('<c r="K3" s="6" t="inlineStr"><is><t xml:space="preserve">Done</t>', $sheet);  // baris done hijau
-        $this->assertStringContainsString('<autoFilter ref="A1:P3"/>', $sheet);
+        $this->assertStringContainsString('<autoFilter ref="A1:S3"/>', $sheet);
         $this->assertStringContainsString('Rekap Daily Issue RCO – Oktober 2026', $summary);
     }
 

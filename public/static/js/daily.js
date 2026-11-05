@@ -141,7 +141,7 @@
   function visibleRows() {
     const q = st.q.toLowerCase();
     return st.rows.filter((r) => !st.hidden.has(r.status) && st.teams.has(r.team) && (!q ||
-      `${r.nomor} ${r.issue} ${r.aplikasi} ${r.team} ${r.pelapor} ${r.pic} ${r.pencatat_issue} ${STATUS[r.status]}`.toLowerCase().includes(q)));
+      `${r.nomor} ${r.issue} ${r.aplikasi} ${r.team} ${r.pelapor} ${r.pic} ${r.pencatat_issue} ${STATUS[r.status]} ${r.note} ${r.aplikasi_ip} ${r.dokumentasi}`.toLowerCase().includes(q)));
   }
 
   function renderTiles() {
@@ -189,6 +189,9 @@
         <td>${esc(r.pelapor)}</td>
         <td><span class="badge ${r.status}">${esc(STATUS[r.status] || r.status)}</span></td>
         <td>${esc(r.pic) || '<span class="muted">—</span>'}</td>
+        <td class="note">${r.note ? `<div class="clamp" title="${esc(r.note)}">${esc(r.note)}</div>` : '<span class="muted">—</span>'}</td>
+        <td class="ip">${r.aplikasi_ip ? `<div class="clamp" title="${esc(r.aplikasi_ip)}">${esc(r.aplikasi_ip)}</div>` : '<span class="muted">—</span>'}</td>
+        <td class="dok">${r.dokumentasi ? `<div class="clamp">${linkify(r.dokumentasi)}</div>` : '<span class="muted">—</span>'}</td>
         <td>${actionButton(r)}</td>
       </tr>`;
     }).join("");
@@ -375,6 +378,12 @@
 
   // ---------- engineer: tindak lanjut ----------
   const fProg = $("#f-progress");
+  // Link http(s) di Dokumentasi bisa diklik (teks lain tetap di-escape)
+  function linkify(text) {
+    return String(text).split(/(https?:\/\/[^\s<>"']+)/g).map((part, i) =>
+      i % 2 ? `<a href="${esc(part)}" target="_blank" rel="noopener noreferrer">${esc(part)}</a>` : esc(part)).join("");
+  }
+
   function summaryHtml(r) {
     const item = (k, v) => `<dt>${k}</dt><dd>${v || '<span class="muted">—</span>'}</dd>`;
     return `<dl class="summary">
@@ -388,6 +397,9 @@
       ${item("Status", `<span class="badge ${r.status}">${esc(STATUS[r.status])}</span>`)}
       ${item("PIC", esc(r.pic))}
       ${item("Mulai / selesai", esc([r.waktu_mulai, r.tanggal_finish && fmtDate(r.tanggal_finish), r.waktu_selesai].filter(Boolean).join(" · ")))}
+      ${item("Note", esc(r.note))}
+      ${item("Aplikasi (IP)", esc(r.aplikasi_ip))}
+      ${item("Dokumentasi", r.dokumentasi ? linkify(r.dokumentasi) : "")}
       ${r.sumber ? item("Sumber", `Impor spreadsheet (${esc(r.sumber)})`) : ""}
     </dl>${attView(r)}`;
   }
@@ -455,6 +467,9 @@
     f.waktu_mulai.value = r.waktu_mulai || "";
     f.tanggal_finish.value = r.tanggal_finish || "";
     f.waktu_selesai.value = r.waktu_selesai || "";
+    f.note.value = r.note || "";
+    f.aplikasi_ip.value = r.aplikasi_ip || "";
+    f.dokumentasi.value = r.dokumentasi || "";
     onStatusChange();
     openModal("#m-progress");
   }

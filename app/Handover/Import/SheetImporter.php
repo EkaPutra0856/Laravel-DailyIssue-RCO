@@ -31,12 +31,16 @@ final class SheetImporter
         'waktu_mulai' => ['waktu mulai', 'jam mulai'],
         'tanggal_finish' => ['tanggal finish', 'tgl finish', 'tanggal selesai'],
         'waktu_selesai' => ['waktu selesai', 'jam selesai'],
+        'note' => ['note', 'notes', 'catatan'],
+        'aplikasi_ip' => ['aplikasi (ip)', 'aplikasi ip', 'ip aplikasi', 'ip'],
+        'dokumentasi' => ['dokumentasi', 'dok', 'dokumen'],
     ];
     // A Tanggal, B ISSUE, C Aplikasi, D Pelapor, E Media, F Penerima, G Pencatat, H Waktu Lapor, I Status, J Pic,
     // K Waktu Mulai, L Tanggal Finish, M Waktu Selesai
     private const EXTRA_DEFAULT = [
         'issue' => 1, 'media_laporan' => 4, 'penerima_laporan' => 5, 'pencatat_issue' => 6, 'waktu_lapor' => 7,
         'waktu_mulai' => 10, 'tanggal_finish' => 11, 'waktu_selesai' => 12,
+        'note' => 13, 'aplikasi_ip' => 14, 'dokumentasi' => 15,
     ];
 
     public function __construct(private Source $source) {}
@@ -57,10 +61,11 @@ final class SheetImporter
 
     /**
      * Impor satu tab. Baris yang sudah pernah diimpor dilewati, kecuali $overwrite (data dari web ikut tertimpa).
+     * $lengkapi: untuk baris yang sudah ada, hanya isi Note / Aplikasi (IP) / Dokumentasi yang masih kosong.
      *
-     * @return array{baru:int, diperbarui:int, dilewati:int}
+     * @return array{baru:int, diperbarui:int, dilewati:int, dilengkapi:int}
      */
-    public function importTab(string $tab, int $year, int $month, bool $overwrite = false): array
+    public function importTab(string $tab, int $year, int $month, bool $overwrite = false, bool $lengkapi = false): array
     {
         $sheet = $this->source->fetch([$tab])[0] ?? new RawSheet($tab, []);
         $cols = Rules::detectColumns($sheet) ?? ColumnMap::default();
@@ -70,12 +75,29 @@ final class SheetImporter
             $rows[$row->rowNumber] = $row;
         }
 
-        $stat = ['baru' => 0, 'diperbarui' => 0, 'dilewati' => 0];
+        $stat = ['baru' => 0, 'diperbarui' => 0, 'dilewati' => 0, 'dilengkapi' => 0];
         $issues = IssueService::fixTypoDates(Rules::buildIssues($sheet, $cols), $year, $month);
-        DB::transaction(function () use ($issues, $rows, $cols, $extra, $tab, $overwrite, &$stat) {
+        DB::transaction(function () use ($issues, $rows, $cols, $extra, $tab, $overwrite, $lengkapi, &$stat) {
             foreach ($issues as $i) {
                 // withTrashed: issue yang sudah dihapus polisi tidak dimunculkan lagi oleh impor ulang
                 $existing = DailyIssue::withTrashed()->where('sumber_tab', $tab)->where('sumber_baris', $i->issueNo)->first();
+                if ($existing && $lengkapi && ! $overwrite) {
+                    $values = $this->attributes($i, $rows[$i->issueNo], $cols, $extra);
+                    $isi = [];
+                    foreach (['note', 'aplikasi_ip', 'dokumentasi'] as $k) {
+                        if (($existing->{$k} ?? '') === '' && ($values[$k] ?? '') !== '') {
+                            $isi[$k] = $values[$k];
+                        }
+                    }
+                    if ($isi) {
+                        $existing->forceFill($isi)->saveQuietly();
+                        $stat['dilengkapi']++;
+                    } else {
+                        $stat['dilewati']++;
+                    }
+
+                    continue;
+                }
                 if ($existing && (! $overwrite || $existing->trashed())) {
                     $stat['dilewati']++;
 
@@ -123,6 +145,11 @@ final class SheetImporter
                 }
             }
             $out[$key] = $idx;
+        }
+        // Di sheet asli kolom IP (setelah Note) berjudul "Aplikasi" juga: judul "Aplikasi" kedua = Aplikasi (IP).
+        $apps = array_keys($header, 'aplikasi', true);
+        if ($out['aplikasi_ip'] === null && count($apps) >= 2) {
+            $out['aplikasi_ip'] = end($apps);
         }
 
         return $out;
@@ -174,6 +201,9 @@ final class SheetImporter
             'waktu_mulai' => self::time($row, $extra['waktu_mulai']),
             'tanggal_finish' => Dates::parseCellDate($extra['tanggal_finish'] === null ? null : ($row->values[$extra['tanggal_finish']] ?? null))?->toDateString(),
             'waktu_selesai' => self::time($row, $extra['waktu_selesai']),
+            'note' => self::text($row, $extra['note'], 20000) ?: null,
+            'aplikasi_ip' => self::text($row, $extra['aplikasi_ip'], 2000) ?: null,
+            'dokumentasi' => self::text($row, $extra['dokumentasi'], 20000) ?: null,
         ];
     }
 

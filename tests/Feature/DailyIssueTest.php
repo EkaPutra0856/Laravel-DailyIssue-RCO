@@ -173,6 +173,30 @@ class DailyIssueTest extends TestCase
         $this->assertSame([], Storage::disk('local')->allFiles());
     }
 
+    public function test_engineer_fills_note_ip_dokumentasi_not_sent_to_telegram(): void
+    {
+        $row = $this->create();
+        $data = $this->putJson("/api/daily/issues/{$row['id']}/tindak-lanjut", [
+            'status' => 'onprogress', 'pic' => 'Hendrik',
+            'note' => "select * from rekon where tid='10787509'", 'aplikasi_ip' => '172.18.141.71',
+            'dokumentasi' => 'https://drive.google.com/x',
+        ])->assertOk()->json();
+        $this->assertSame(["select * from rekon where tid='10787509'", '172.18.141.71', 'https://drive.google.com/x'],
+            [$data['note'], $data['aplikasi_ip'], $data['dokumentasi']]);
+        $this->assertSame('172.18.141.71', $this->getJson('/api/daily/issues?start=2026-11-05&end=2026-11-05')->json('issues.0.aplikasi_ip'));
+
+        // Catatan teknis / IP tidak pernah ikut ke pesan Telegram
+        $msg = $this->postJson('/api/preview', ['start' => '2026-11-05', 'end' => '2026-11-05', 'categories' => ['progress'], 'detail' => true])
+            ->json('messages.0');
+        $this->assertStringContainsString('Hendrik', $msg);
+        $this->assertStringNotContainsString('172.18', $msg);
+        $this->assertStringNotContainsString('select', $msg);
+        $this->assertStringNotContainsString('drive.google', $msg);
+
+        $this->putJson("/api/daily/issues/{$row['id']}/tindak-lanjut", ['status' => 'done', 'pic' => 'X', 'aplikasi_ip' => str_repeat('1', 2100)])
+            ->assertStatus(422)->assertJsonPath('error', 'Aplikasi (IP) maksimal 2000 karakter.');
+    }
+
     public function test_show_single_issue(): void
     {
         $id = $this->create()['id'];

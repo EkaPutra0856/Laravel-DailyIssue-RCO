@@ -15,7 +15,8 @@ class HandoverImportCommand extends Command
     protected $signature = 'handover:import
         {--sejak= : mulai bulan YYYY-MM (default: 2 bulan lalu)}
         {--sampai= : sampai bulan YYYY-MM (default: bulan ini)}
-        {--timpa : timpa baris yang sudah pernah diimpor (perubahan dari web ikut tertimpa)}';
+        {--timpa : timpa baris yang sudah pernah diimpor (perubahan dari web ikut tertimpa)}
+        {--lengkapi : untuk baris yang sudah ada, hanya isi Note / Aplikasi (IP) / Dokumentasi yang masih kosong}';
 
     protected $description = 'Impor issue dari tab "Issue <Bulan> <Tahun>" spreadsheet asli ke database (read-only)';
 
@@ -54,23 +55,23 @@ class HandoverImportCommand extends Command
             return 0;
         }
 
-        $total = ['baru' => 0, 'diperbarui' => 0, 'dilewati' => 0];
+        $total = ['baru' => 0, 'diperbarui' => 0, 'dilewati' => 0, 'dilengkapi' => 0];
         foreach ($tabs as $tab => [$y, $m]) {
             $this->line("Membaca '{$tab}' ...");
             try {
-                $stat = $importer->importTab($tab, $y, $m, (bool) $this->option('timpa'));
+                $stat = $importer->importTab($tab, $y, $m, (bool) $this->option('timpa'), (bool) $this->option('lengkapi'));
             } catch (SourceError $e) {
                 $this->error("  ❌ {$e->getMessage()}");
 
                 continue;
             }
-            $this->line("  baru {$stat['baru']}, diperbarui {$stat['diperbarui']}, sudah ada {$stat['dilewati']}");
+            $this->line("  baru {$stat['baru']}, diperbarui {$stat['diperbarui']}, dilengkapi {$stat['dilengkapi']}, sudah ada {$stat['dilewati']}");
             foreach ($stat as $k => $v) {
                 $total[$k] += $v;
             }
         }
         $apps = SheetImporter::rebuildAplikasi();
-        $this->info("Selesai: {$total['baru']} issue baru, {$total['diperbarui']} diperbarui, {$total['dilewati']} sudah ada. "
+        $this->info("Selesai: {$total['baru']} issue baru, {$total['diperbarui']} diperbarui, {$total['dilengkapi']} dilengkapi, {$total['dilewati']} sudah ada. "
             ."{$apps} aplikasi baru untuk rekomendasi team.");
 
         return 0;

@@ -60,15 +60,15 @@
       <input type="date" id="start" aria-label="Tanggal mulai"> <span class="muted">s/d</span>
       <input type="date" id="end" aria-label="Tanggal akhir">
     </div>
-    <label class="month-pick" title="Lihat rekap bulan tertentu">Bulan
-      <input type="month" id="month" aria-label="Pilih bulan">
-    </label>
   </div>
   <div class="f-row">
     <span class="f-label">Tim</span>
     <div class="chips" id="team-chips">
       @foreach ($teams as $t)<button class="chip" data-t="{{ $t }}">{{ $t }}</button>@endforeach
     </div>
+    <label class="month-pick" title="Lihat rekap bulan tertentu">Bulan
+      <input type="month" id="month" aria-label="Pilih bulan">
+    </label>
     <input class="pill-search grow" id="q" type="search" placeholder="Cari nomor, aplikasi, pelapor, PIC, isi issue... (tekan /)">
     <button class="btn" id="reset-filter">Reset filter</button>
   </div>
@@ -93,7 +93,7 @@
   <div class="tbl-wrap">
     <table>
       <thead>
-        <tr><th>No</th><th>Lapor</th><th>Issue</th><th>Aplikasi</th><th>Team</th><th>Pelapor</th><th>Status</th><th>PIC</th><th></th></tr>
+        <tr><th>No</th><th>Lapor</th><th>Issue</th><th>Aplikasi</th><th>Team</th><th>Pelapor</th><th>Status</th><th>PIC</th><th>Note</th><th>Aplikasi (IP)</th><th>Dokumentasi</th><th></th></tr>
       </thead>
       <tbody id="rows"></tbody>
     </table>
@@ -185,6 +185,10 @@
         <label class="field">Waktu Mulai<input name="waktu_mulai" type="time"></label>
         <label class="field">Tanggal Finish<input name="tanggal_finish" type="date"></label>
         <label class="field">Waktu Selesai<input name="waktu_selesai" type="time"></label>
+        <label class="field">Aplikasi (IP)<textarea name="aplikasi_ip" rows="2" maxlength="2000" placeholder="mis. 172.18.x.x&#10;DB : nama database"></textarea></label>
+        <label class="field span2">Note<textarea name="note" rows="3" maxlength="20000" placeholder="Catatan pengerjaan, query, langkah yang sudah dilakukan"></textarea></label>
+        <label class="field span2">Dokumentasi<textarea name="dokumentasi" rows="2" maxlength="20000" placeholder="Link dokumentasi / folder Drive / keterangan"></textarea>
+          <span class="hint">Tidak ikut dikirim ke Telegram</span></label>
       </div>
       <p class="hint" id="submit-hint"></p>
       <p class="form-error" hidden></p>

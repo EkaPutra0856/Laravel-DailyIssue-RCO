@@ -54,6 +54,7 @@ class DailyIssueController extends Controller
         'media_laporan' => 'Media laporan', 'penerima_laporan' => 'Penerima laporan', 'pencatat_issue' => 'Pencatat issue',
         'waktu_lapor' => 'Waktu lapor', 'status' => 'Status', 'pic' => 'PIC', 'waktu_mulai' => 'Waktu mulai',
         'tanggal_finish' => 'Tanggal finish', 'waktu_selesai' => 'Waktu selesai',
+        'note' => 'Note', 'aplikasi_ip' => 'Aplikasi (IP)', 'dokumentasi' => 'Dokumentasi',
     ];
 
     public function page(): View
@@ -231,13 +232,15 @@ class DailyIssueController extends Controller
         $hhmm = fn ($t) => $t ? substr($t, 0, 5) : '';
 
         $issueRows = [['No', 'Tanggal', 'Issue', 'Aplikasi', 'Team', 'Pelapor', 'Media Laporan', 'Penerima Laporan',
-            'Pencatat Issue', 'Waktu Lapor', 'Status', 'PIC', 'Waktu Mulai', 'Tanggal Finish', 'Waktu Selesai', 'Lampiran']];
+            'Pencatat Issue', 'Waktu Lapor', 'Status', 'PIC', 'Waktu Mulai', 'Tanggal Finish', 'Waktu Selesai',
+            'Note', 'Aplikasi (IP)', 'Dokumentasi', 'Lampiran']];
         $styles = [];
         foreach ($rows as $i => $d) {
             $issueRows[] = [
                 $d->nomor, $fmt($d->tanggal), $d->issue, $d->aplikasi, $d->team, $d->pelapor, $d->media_laporan,
                 $d->penerima_laporan, $d->pencatat_issue, $hhmm($d->waktu_lapor), DailyIssue::STATUS_LABEL[$d->status] ?? $d->status,
                 $d->pic, $hhmm($d->waktu_mulai), $fmt($d->tanggal_finish), $hhmm($d->waktu_selesai),
+                (string) $d->note, (string) $d->aplikasi_ip, (string) $d->dokumentasi,
                 $d->lampiran->pluck('nama')->implode(', '),
             ];
             $styles[$i + 1] = XlsxWriter::FILLS[$d->status] ?? XlsxWriter::WRAP;
@@ -266,7 +269,7 @@ class DailyIssueController extends Controller
 
         $path = tempnam(sys_get_temp_dir(), 'rekap');
         (new XlsxWriter)
-            ->addSheet('Issue', $issueRows, [6, 11, 60, 18, 10, 24, 16, 22, 16, 11, 12, 16, 11, 13, 12, 28], $styles)
+            ->addSheet('Issue', $issueRows, [6, 11, 60, 18, 10, 24, 16, 22, 16, 11, 12, 16, 11, 13, 12, 40, 20, 30, 28], $styles)
             ->addSheet('Ringkasan', $summary, [16, 11, 13, 11, 11, 11], array_fill(4, count(Teams::ALL), XlsxWriter::BOLD), 3, $cell)
             ->save($path);
 
@@ -318,6 +321,9 @@ class DailyIssueController extends Controller
             'waktu_mulai' => 'nullable|date_format:H:i',
             'tanggal_finish' => 'nullable|date_format:Y-m-d',
             'waktu_selesai' => 'nullable|date_format:H:i',
+            'note' => 'nullable|string|max:20000',
+            'aplikasi_ip' => 'nullable|string|max:2000',
+            'dokumentasi' => 'nullable|string|max:20000',
         ]);
         if ($data instanceof JsonResponse) {
             return $data;
@@ -328,6 +334,9 @@ class DailyIssueController extends Controller
             'waktu_mulai' => ($data['waktu_mulai'] ?? null) ?: null,
             'tanggal_finish' => ($data['tanggal_finish'] ?? null) ?: null,
             'waktu_selesai' => ($data['waktu_selesai'] ?? null) ?: null,
+            'note' => ($data['note'] ?? null) ?: null,
+            'aplikasi_ip' => ($data['aplikasi_ip'] ?? null) ?: null,
+            'dokumentasi' => ($data['dokumentasi'] ?? null) ?: null,
         ]);
 
         return self::json($issue->fresh()->load('lampiran')->toRow());

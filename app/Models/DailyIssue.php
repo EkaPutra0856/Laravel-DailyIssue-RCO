@@ -25,7 +25,8 @@ class DailyIssue extends Model
 
     protected $fillable = [
         'tanggal', 'waktu_lapor', 'issue', 'aplikasi', 'team', 'pelapor', 'media_laporan', 'penerima_laporan',
-        'pencatat_issue', 'status', 'pic', 'waktu_mulai', 'tanggal_finish', 'waktu_selesai', 'sumber_tab', 'sumber_baris',
+        'pencatat_issue', 'status', 'pic', 'waktu_mulai', 'tanggal_finish', 'waktu_selesai', 'note', 'aplikasi_ip', 'dokumentasi',
+        'sumber_tab', 'sumber_baris',
     ];
 
     protected $attributes = ['status' => 'pending', 'pic' => ''];
@@ -76,6 +77,9 @@ class DailyIssue extends Model
             'waktu_mulai' => self::hhmm($this->waktu_mulai),
             'tanggal_finish' => $this->tanggal_finish?->toDateString(),
             'waktu_selesai' => self::hhmm($this->waktu_selesai),
+            'note' => (string) $this->note,
+            'aplikasi_ip' => (string) $this->aplikasi_ip,
+            'dokumentasi' => (string) $this->dokumentasi,
             'sumber' => $this->sumber_tab ? "{$this->sumber_tab} baris {$this->sumber_baris}" : null,
             'updated_at' => $this->updated_at?->toIso8601String(),
             'lampiran' => $this->lampiran->map(fn (Lampiran $l) => $l->toRow())->all(),

@@ -112,6 +112,9 @@ tbody tr.flash { animation: flash 1.6s ease-out; }
 td.no { font-weight: 700; white-space: nowrap; }
 td.lapor { white-space: nowrap; color: #4a5a80; }
 td.issue { max-width: 380px; }
+td.note { min-width: 160px; max-width: 260px; }
+td.ip { min-width: 130px; max-width: 200px; word-break: break-word; }
+td.dok { min-width: 140px; max-width: 220px; word-break: break-word; }
 .clamp { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; white-space: pre-line; }
 tr.s-pending td:first-child { box-shadow: inset 4px 0 0 #c3cad8; }
 tr.s-onprogress td:first-child { box-shadow: inset 4px 0 0 #f5b70f; }
@@ -196,7 +199,7 @@ tbody tr[data-id] { cursor: pointer; }
 .f-row .grow { flex: 1 1 260px; min-width: 200px; width: auto; padding: 7px 14px; font-size: 13px; }
 .filters .seg button { padding: 6px 11px; }
 .filters .dates input { width: 138px; }
-.filters .month-pick { margin-left: 2px; }
+.filters .month-pick { margin-left: 6px; }
 .filters .month-pick input { width: 150px; }
 .filters #reset-filter { padding: 7px 14px; }
 .f-row + .f-row { border-top: 1px dashed var(--border); }
