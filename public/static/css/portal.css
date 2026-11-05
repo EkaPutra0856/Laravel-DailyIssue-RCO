@@ -216,7 +216,12 @@ tbody tr[data-id] { cursor: pointer; }
 .dot.onprogress { background: #f5b70f; }
 .dot.trouble { background: #e2493a; }
 .dot.done { background: #2fae62; }
-.grid-main { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 18px; margin-top: 18px; align-items: start; }
+.grid-main { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 18px; margin-top: 18px; align-items: stretch; }
+/* Tabel & panel Per Tim sama tinggi: tabel mengisi tinggi baris grid (contain: size = isi tabel tidak ikut
+   menentukan tinggi), sisanya di-scroll di dalam. Minimal setinggi layar yang tersisa. */
+.grid-main > .card:first-child { display: flex; flex-direction: column; min-width: 0; }
+.grid-main .tbl-wrap { flex: 1 1 auto; contain: size; max-height: none; min-height: max(420px, calc(100vh - 330px)); }
+body.embed .grid-main .tbl-wrap { min-height: max(420px, calc(100vh - 300px)); }
 .card-title { margin: 0; font-size: 15px; font-weight: 700; color: var(--text); }
 .side-panel .panel-h { display: flex; align-items: baseline; gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--border); }
 .side-panel .count { color: var(--muted); font-size: 12.5px; }
