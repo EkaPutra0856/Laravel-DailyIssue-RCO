@@ -75,8 +75,33 @@
     if (p === "yesterday") [st.start, st.end] = [d(-1), d(-1)];
     if (p === "week") [st.start, st.end] = [d(-6), d(0)];
     if (p === "month") [st.start, st.end] = [isoDate(new Date(t.getFullYear(), t.getMonth(), 1)), d(0)];
+    if (p === "lastmonth") [st.start, st.end] = [isoDate(new Date(t.getFullYear(), t.getMonth() - 1, 1)), isoDate(new Date(t.getFullYear(), t.getMonth(), 0))];
+    syncPeriod();
+  }
+
+  // Satu bulan penuh (dari pemilih bulan): untuk melihat & mengunduh rekap bulan-bulan sebelumnya.
+  function setMonth(ym) {
+    const [y, m] = ym.split("-").map(Number);
+    st.preset = "";
+    [st.start, st.end] = [isoDate(new Date(y, m - 1, 1)), isoDate(new Date(y, m, 0))];
+    syncPeriod();
+  }
+
+  function syncPeriod() {
     $("#start").value = st.start; $("#end").value = st.end;
-    $$("#presets button").forEach((b) => b.classList.toggle("on", b.dataset.p === p));
+    $$("#presets button").forEach((b) => b.classList.toggle("on", b.dataset.p === st.preset));
+    // Pemilih bulan menunjukkan bulannya kalau periode tepat satu bulan penuh
+    const s = st.start.slice(0, 7);
+    const [y, m] = s.split("-").map(Number);
+    const full = st.start.endsWith("-01") && st.end === isoDate(new Date(y, m, 0));
+    $("#month").value = full ? s : "";
+    updateExcelLink();
+  }
+
+  function updateExcelLink() {
+    const q = new URLSearchParams({ start: st.start, end: st.end });
+    if (st.team) q.set("team", st.team);
+    $("#btn-excel").href = `api/daily/export?${q}`;
   }
 
   // ---------- data ----------
@@ -114,7 +139,7 @@
   function visibleRows() {
     const q = st.q.toLowerCase();
     return st.rows.filter((r) => !st.hidden.has(r.status) && (!st.team || r.team === st.team) && (!q ||
-      `${r.id} ${r.issue} ${r.aplikasi} ${r.team} ${r.pelapor} ${r.pic} ${r.pencatat_issue} ${STATUS[r.status]}`.toLowerCase().includes(q)));
+      `${r.nomor} ${r.issue} ${r.aplikasi} ${r.team} ${r.pelapor} ${r.pic} ${r.pencatat_issue} ${STATUS[r.status]}`.toLowerCase().includes(q)));
   }
 
   function renderTiles() {
@@ -130,8 +155,12 @@
       const label = r.status === "pending" ? "Kerjakan" : "Update";
       return `<button class="btn small ${r.status === "pending" ? "primary" : "outline"}" data-act="progress" data-id="${r.id}">${label}</button>`;
     }
-    return `<button class="btn small outline" data-act="detail" data-id="${r.id}">Detail</button>`;
+    return `<button class="btn small outline" data-act="edit" data-id="${r.id}">Edit</button>`;
   }
+
+  // "Issue 5 · Nov 2026": nomor mulai dari 1 lagi tiap bulan.
+  const BULAN = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+  const issueLabel = (r) => `Issue ${r.nomor}${r.bulan ? ` · ${BULAN[Number(r.bulan.slice(5)) - 1]} ${r.bulan.slice(0, 4)}` : ""}`;
 
   const CLIP = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 11-8.5 8.5a5 5 0 0 1-7-7L14 4a3.5 3.5 0 0 1 5 5l-8.5 8.5a2 2 0 0 1-3-3L15 7"/></svg>';
   // Penanda di tabel: issue ini punya lampiran (isinya dilihat saat issue dibuka).
@@ -150,7 +179,7 @@
     $("#rows").innerHTML = rows.map((r) => {
       const flash = changed && !changed.has(`${r.id}:${r.updated_at}`) ? " flash" : "";
       return `<tr class="s-${r.status}${flash}" data-id="${r.id}" title="${openTitle}">
-        <td class="no">#${r.id}</td>
+        <td class="no" title="${esc(issueLabel(r))}">${r.nomor}</td>
         <td class="lapor">${fmtDate(r.tanggal)}<br><span class="muted">${esc(r.waktu_lapor || "")}</span></td>
         <td class="issue"><div class="clamp">${esc(r.issue)}</div>${attBadge(r)}</td>
         <td>${esc(r.aplikasi) || '<span class="muted">—</span>'}</td>
@@ -210,9 +239,62 @@
 
   // ---------- polisi: catat issue ----------
   const fNew = $("#f-new");
+  // Popup yang sama dipakai untuk catat baru dan edit (polisi memperbaiki salah ketik).
+  let editing = null;           // issue yang sedang diedit, null = catat baru
+  const removeIds = new Set();  // lampiran lama yang akan dihapus saat disimpan
+
+  function setFormMode(r) {
+    editing = r;
+    removeIds.clear();
+    $("#m-new-t").textContent = r ? `Edit ${issueLabel(r)}` : "Catat Issue Baru";
+    $("#new-submit").textContent = r ? "Simpan Perubahan" : "Simpan Issue";
+    const status = r ? r.status : "pending";
+    $("#new-status").className = `badge ${status}`;
+    $("#new-status").textContent = STATUS[status];
+    $("#new-status-hint").textContent = r ? "Status & PIC diisi engineer, tidak berubah saat edit" : "Otomatis untuk issue baru";
+    renderOldFiles();
+  }
+
+  function renderOldFiles() {
+    const box = $("#att-old");
+    const att = editing?.lampiran || [];
+    box.hidden = !att.length;
+    box.innerHTML = att.map((a) => {
+      const del = removeIds.has(a.id);
+      const thumb = a.gambar ? `<img src="${esc(a.url)}" alt="">` : `<span class="file-ico">${esc(ext(a.nama))}</span>`;
+      return `<div class="att-item${del ? " removed" : ""}">${thumb}<span><span class="att-name" title="${esc(a.nama)}">${esc(a.nama)}</span><br>
+        <span class="att-size">${del ? "akan dihapus" : fmtSize(a.ukuran)}</span></span>
+        <button type="button" class="att-del" data-old="${a.id}" aria-label="${del ? "Batal hapus" : "Hapus"} ${esc(a.nama)}">${del ? "↺" : "×"}</button></div>`;
+    }).join("");
+  }
+
+  function openEdit(r) {
+    fNew.reset();
+    clearFormError(fNew);
+    setFormMode(r);
+    const f = fNew.elements;
+    f.issue.value = r.issue;
+    f.aplikasi.value = r.aplikasi;
+    f.team.value = r.team;
+    f.pelapor.value = r.pelapor;
+    f.media_laporan.value = r.media_laporan;
+    f.penerima_laporan.value = r.penerima_laporan;
+    f.pencatat_issue.value = r.pencatat_issue;
+    f.waktu_lapor.value = `${r.tanggal}T${r.waktu_lapor || "00:00"}`;
+    // Tampilkan rekomendasi team tanpa mengubah team yang sudah tercatat
+    const app = st.apps.get(normApp(r.aplikasi));
+    teamAuto = app ? app.team : null;
+    $("#app-hint").textContent = "";
+    onTeamChange();
+    newFiles = [];
+    renderNewFiles();
+    openModal("#m-new");
+  }
+
   function openNew() {
     fNew.reset();
     clearFormError(fNew);
+    setFormMode(null);
     fNew.elements.pencatat_issue.value = st.nama;
     fNew.elements.waktu_lapor.value = nowLocal();
     fNew.elements.media_laporan.value = fNew.elements.media_laporan.dataset.default || "";
@@ -253,15 +335,18 @@
     clearFormError(fNew);
     const body = new FormData(fNew);
     newFiles.forEach((f) => body.append("lampiran[]", f, f.name));
+    removeIds.forEach((id) => body.append("hapus_lampiran[]", id));
     const btn = fNew.querySelector("[type=submit]");
     btn.disabled = true;
+    const wasEditing = editing;
     try {
-      const row = await api("api/daily/issues", "POST", body);
+      const row = await api(wasEditing ? `api/daily/issues/${wasEditing.id}` : "api/daily/issues", "POST", body);
       closeModal($("#m-new"));
       newFiles = [];
       renderNewFiles();
       const att = row.lampiran.length ? ` dengan ${row.lampiran.length} lampiran` : "";
-      Portal.toast(`Issue #${row.id} tersimpan (Pending)${att}`);
+      Portal.toast(wasEditing ? `${issueLabel(row)} diperbarui${row.bulan !== wasEditing.bulan ? " (pindah bulan, nomor baru)" : ""}`
+        : `${issueLabel(row)} tersimpan (Pending)${att}`);
       if (row.tanggal < st.start || row.tanggal > st.end) setPreset("today");
       await Promise.all([load(true), loadApps()]);
     } catch (err) {
@@ -323,7 +408,8 @@
       const e = f.name.split(".").pop().toLowerCase();
       if (!OK_EXT.includes(e)) { errors.push(`${f.name}: jenis file tidak didukung`); continue; }
       if (f.size > MAX_BYTES) { errors.push(`${f.name}: lebih dari 10 MB`); continue; }
-      if (newFiles.length >= MAX_FILES) { errors.push(`Maksimal ${MAX_FILES} lampiran`); break; }
+      const kept = (editing?.lampiran || []).filter((a) => !removeIds.has(a.id)).length;
+      if (kept + newFiles.length >= MAX_FILES) { errors.push(`Maksimal ${MAX_FILES} lampiran`); break; }
       newFiles.push(f);
     }
     renderNewFiles();
@@ -342,7 +428,7 @@
   function openProgress(r) {
     st.current = r;
     clearFormError(fProg);
-    $("#m-progress-t").textContent = `Tindak Lanjut Issue #${r.id}`;
+    $("#m-progress-t").textContent = `Tindak Lanjut ${issueLabel(r)}`;
     $("#progress-summary").outerHTML = `<div class="summary-wrap" id="progress-summary">${summaryHtml(r)}</div>`;
     const f = fProg.elements;
     f.status.value = r.status === "pending" ? "onprogress" : r.status;
@@ -387,7 +473,7 @@
     try {
       const row = await api(`api/daily/issues/${st.current.id}/tindak-lanjut`, "PUT", body);
       closeModal($("#m-progress"));
-      Portal.toast(`Issue #${row.id}: ${STATUS[row.status]}`);
+      Portal.toast(`${issueLabel(row)}: ${STATUS[row.status]}`);
       await load(true);
     } catch (err) {
       showFormError(fProg, err);
@@ -397,7 +483,7 @@
 
   function openDetail(r) {
     st.current = r;
-    $("#m-detail-t").textContent = `Detail Issue #${r.id}`;
+    $("#m-detail-t").textContent = `Detail ${issueLabel(r)}`;
     $("#detail-body").outerHTML = `<div id="detail-body">${summaryHtml(r)}</div>`;
     openModal("#m-detail");
   }
@@ -415,10 +501,11 @@
     $$("#presets button").forEach((b) => b.addEventListener("click", () => { setPreset(b.dataset.p); load(); }));
     ["#start", "#end"].forEach((s) => $(s).addEventListener("change", () => {
       st.start = $("#start").value; st.end = $("#end").value; st.preset = "";
-      $$("#presets button").forEach((b) => b.classList.remove("on"));
+      syncPeriod();
       if (st.start && st.end && st.start <= st.end) load();
     }));
-    $("#team-filter").addEventListener("change", (e) => { st.team = e.target.value; renderAll(); });
+    $("#month").addEventListener("change", (e) => { if (e.target.value) { setMonth(e.target.value); load(); } });
+    $("#team-filter").addEventListener("change", (e) => { st.team = e.target.value; updateExcelLink(); renderAll(); });
     let qTimer;
     $("#q").addEventListener("input", (e) => { clearTimeout(qTimer); qTimer = setTimeout(() => { st.q = e.target.value.trim(); renderRows(); }, 150); });
     $$(".tile").forEach((t) => t.addEventListener("click", () => {
@@ -427,7 +514,7 @@
       renderAll();
     }));
 
-    // Klik tombol atau di mana saja pada baris: engineer -> popup tindak lanjut, polisi -> detail.
+    // Klik tombol atau di mana saja pada baris: engineer -> popup tindak lanjut, polisi -> detail (ada tombol Edit).
     $("#rows").addEventListener("click", (e) => {
       if (e.target.closest("a") || window.getSelection().toString()) return;  // jangan ganggu link / seleksi teks
       const b = e.target.closest("[data-act]");
@@ -435,7 +522,7 @@
       const r = st.byId.get(Number((b || tr)?.dataset.id));
       if (!r) return;
       const act = b ? b.dataset.act : (st.role === "engineer" ? "progress" : "detail");
-      (act === "progress" ? openProgress : openDetail)(r);
+      ({ progress: openProgress, edit: openEdit, detail: openDetail }[act] || openDetail)(r);
     });
 
     // Lampiran: pilih file, tarik-lepas, atau tempel (Ctrl+V) di popup catat issue.
@@ -454,8 +541,17 @@
       const del = e.target.closest(".att-del");
       if (del) { newFiles.splice(Number(del.dataset.i), 1); renderNewFiles(); }
     });
+    // Lampiran lama saat edit: klik × untuk tandai hapus, klik ↺ untuk batal
+    $("#att-old").addEventListener("click", (e) => {
+      const b = e.target.closest("[data-old]");
+      if (!b) return;
+      const id = Number(b.dataset.old);
+      removeIds.has(id) ? removeIds.delete(id) : removeIds.add(id);
+      renderOldFiles();
+    });
     $("#btn-new").addEventListener("click", openNew);
     $("#detail-to-progress").addEventListener("click", () => { closeModal($("#m-detail")); openProgress(st.current); });
+    $("#detail-to-edit").addEventListener("click", () => { closeModal($("#m-detail")); openEdit(st.current); });
 
     fNew.addEventListener("submit", submitNew);
     fNew.elements.aplikasi.addEventListener("input", onAppInput);

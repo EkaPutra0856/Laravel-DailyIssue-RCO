@@ -18,6 +18,7 @@ final class Issue
         public string $doneReason = '',        // "status", "pic", atau "hijau"
         public bool $waitingExternal = false,  // baris orange: menunggu tindak lanjut eksternal
         public bool $trouble = false,          // status "trouble" dari engineer (dihitung on progress)
+        public ?int $ref = null,               // id di database (untuk link membuka issue di halaman Daily Issue)
     ) {}
 
     /** Nama PIC untuk ditampilkan; kalau PIC kosong, nama timnya. */

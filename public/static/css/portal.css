@@ -174,6 +174,11 @@ tr.s-done td:first-child { box-shadow: inset 4px 0 0 #2fae62; }
 .att-item .att-size { color: var(--muted); }
 .att-item .att-del { position: absolute; top: 4px; right: 6px; border: 0; background: none; font-size: 17px; line-height: 1; color: var(--muted); cursor: pointer; }
 .att-item .att-del:hover { color: var(--danger); }
+.att-item.removed { opacity: .55; border-style: dashed; }
+.att-item.removed .att-name { text-decoration: line-through; }
+.month-pick { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: #4a5a80; }
+.month-pick input { border: 1px solid #cfd8ea; border-radius: 8px; padding: 4px 8px; background: #fff; font-size: 13px; }
+td.no { color: var(--navy-ink); }
 .att-badge { display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; font-size: 11.5px; font-weight: 650; color: var(--blue); background: var(--blue-soft); border-radius: 999px; padding: 1px 8px; }
 .att-view { margin: -4px 0 14px; display: grid; gap: 10px; }
 .att-view h3 { margin: 0; font-size: 12.5px; color: #3b4a6e; }

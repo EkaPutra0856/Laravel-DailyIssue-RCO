@@ -32,6 +32,21 @@ class DailyIssue extends Model
         return ['tanggal' => 'date:Y-m-d', 'tanggal_finish' => 'date:Y-m-d'];
     }
 
+    /**
+     * Nomor issue mulai dari 1 lagi tiap bulan. Issue baru (dan issue yang tanggal lapornya dipindah ke bulan lain)
+     * mendapat nomor berikutnya di bulan itu. Simpan di dalam DB::transaction supaya nomor tidak bentrok.
+     */
+    protected static function booted(): void
+    {
+        static::saving(function (DailyIssue $issue) {
+            $bulan = $issue->tanggal?->format('Y-m');
+            if ($bulan && ($issue->nomor === null || $issue->bulan !== $bulan)) {
+                $issue->bulan = $bulan;
+                $issue->nomor = (int) self::query()->where('bulan', $bulan)->lockForUpdate()->max('nomor') + 1;
+            }
+        });
+    }
+
     private static function hhmm(?string $time): ?string
     {
         return $time ? substr($time, 0, 5) : null;
@@ -42,6 +57,8 @@ class DailyIssue extends Model
     {
         return [
             'id' => $this->id,
+            'nomor' => $this->nomor,     // nomor issue di bulannya (mulai 1 tiap bulan)
+            'bulan' => $this->bulan,
             'tanggal' => $this->tanggal?->toDateString(),
             'waktu_lapor' => self::hhmm($this->waktu_lapor),
             'issue' => $this->issue,
@@ -77,8 +94,8 @@ class DailyIssue extends Model
         };
 
         return new Issue(
-            sheet: '',
-            issueNo: $this->id,
+            sheet: (string) $this->bulan,  // kunci unik "2026-11#5" walau rentang rekap lintas bulan
+            issueNo: (int) $this->nomor,
             tanggal: Dates::make($this->tanggal->year, $this->tanggal->month, $this->tanggal->day),
             team: $this->team,
             aplikasi: $this->aplikasi,
@@ -87,6 +104,7 @@ class DailyIssue extends Model
             category: $category,
             doneReason: $category === Category::DONE ? 'status' : '',
             trouble: $this->status === 'trouble',
+            ref: $this->id,
         );
     }
 }

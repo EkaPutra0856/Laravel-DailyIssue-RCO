@@ -11,7 +11,7 @@ final class DbIssueProvider implements IssueProvider
     {
         $issues = DailyIssue::query()
             ->whereBetween('tanggal', [$query->start->toDateString(), $query->end->toDateString()])
-            ->orderBy('tanggal')->orderBy('id')
+            ->orderBy('tanggal')->orderBy('nomor')
             ->get()
             ->map(fn (DailyIssue $d) => $d->toIssue())
             ->all();

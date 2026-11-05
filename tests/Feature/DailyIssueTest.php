@@ -116,8 +116,8 @@ class DailyIssueTest extends TestCase
         $q = Commands::parse('/rekapdetail', Dates::make(2026, 11, 5));
         [$issues] = app(IssueProvider::class)->collect($q);
         $msg = Report::buildMessages($issues, $q, 'Handover Polisi – Team RCO')[0];
-        $this->assertStringContainsString("<b>Tim 1</b>\n05/11/2026 — Issue {$a['id']} — MPAYS", $msg);
-        $this->assertStringContainsString("05/11/2026 — Tim 2 — Issue {$b['id']} — QRIS — Hendrik 🔴 <i>(trouble)</i>", $msg);
+        $this->assertStringContainsString("<b>Tim 1</b>\n05/11/2026 — Issue {$a['nomor']} — MPAYS", $msg);
+        $this->assertStringContainsString("05/11/2026 — Tim 2 — Issue {$b['nomor']} — QRIS — Hendrik 🔴 <i>(trouble)</i>", $msg);
         $this->assertStringNotContainsString('BRIVA', $msg);  // done tidak masuk /rekap
         $this->assertStringContainsString('Total Pending: 1 Issue (Putih)', $msg);
         $this->assertStringContainsString('Total On Progress: 1 Issue (Kuning)', $msg);

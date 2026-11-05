@@ -52,7 +52,11 @@
       <button data-p="yesterday">Kemarin</button>
       <button data-p="week">7 hari</button>
       <button data-p="month">Bulan ini</button>
+      <button data-p="lastmonth">Bulan lalu</button>
     </div>
+    <label class="month-pick" title="Lihat rekap bulan tertentu">Bulan
+      <input type="month" id="month" aria-label="Pilih bulan">
+    </label>
     <div class="dates">
       <input type="date" id="start" aria-label="Tanggal mulai"> <span class="muted">s/d</span>
       <input type="date" id="end" aria-label="Tanggal akhir">
@@ -67,6 +71,10 @@
     <span class="count" id="count"></span>
     <span class="sync" id="sync" role="status" aria-live="polite" hidden></span>
     <span class="spacer"></span>
+    <a class="btn small outline" id="btn-excel" href="#" title="Unduh issue periode ini (sesuai filter team) sebagai Excel">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>
+      Download Excel
+    </a>
     <a class="link-btn" href="{{ url('/rekap') }}">Rekap &amp; kirim ke Telegram →</a>
   </div>
   <div class="tbl-wrap">
@@ -111,6 +119,7 @@
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 11-8.5 8.5a5 5 0 0 1-7-7L14 4a3.5 3.5 0 0 1 5 5l-8.5 8.5a2 2 0 0 1-3-3L15 7"/></svg>
           <span>Tarik file ke sini, <button type="button" class="link" id="pick-files">pilih file</button>, atau tempel screenshot (Ctrl+V)</span>
         </div>
+        <div class="att-list" id="att-old" hidden></div>
         <div class="att-list" id="att-new"></div>
       </div>
       <label class="field">Aplikasi
@@ -131,10 +140,10 @@
       <label class="field">Penerima Laporan<input name="penerima_laporan" list="penerima" required maxlength="150" placeholder="Nama group / RCO Official / nama sendiri"></label>
       <label class="field">Pencatat Issue<input name="pencatat_issue" required maxlength="100"></label>
       <label class="field">Waktu Lapor<input name="waktu_lapor" type="datetime-local" required></label>
-      <div class="field"><span>Status</span><span class="badge pending">Pending</span><span class="hint">Otomatis untuk issue baru</span></div>
+      <div class="field"><span>Status</span><span class="badge pending" id="new-status">Pending</span><span class="hint" id="new-status-hint">Otomatis untuk issue baru</span></div>
       <p class="form-error span2" hidden></p>
     </div>
-    <div class="modal-f"><button type="button" class="btn" data-close>Batal</button><button class="btn primary" type="submit">Simpan Issue</button></div>
+    <div class="modal-f"><button type="button" class="btn" data-close>Batal</button><button class="btn primary" type="submit" id="new-submit">Simpan Issue</button></div>
   </form>
 </div>
 
@@ -167,7 +176,7 @@
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="m-detail-t">
     <div class="modal-h"><h2 id="m-detail-t">Detail Issue</h2><button class="x" data-close aria-label="Tutup">×</button></div>
     <div class="modal-b"><div class="summary" id="detail-body"></div></div>
-    <div class="modal-f"><button class="btn" data-close>Tutup</button><button class="btn primary" id="detail-to-progress" data-only="engineer">Tindak Lanjut</button></div>
+    <div class="modal-f"><button class="btn" data-close>Tutup</button><button class="btn outline" id="detail-to-edit" data-only="polisi">Edit Issue</button><button class="btn primary" id="detail-to-progress" data-only="engineer">Tindak Lanjut</button></div>
   </div>
 </div>
 

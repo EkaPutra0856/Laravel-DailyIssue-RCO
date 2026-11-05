@@ -79,7 +79,7 @@ final class HandoverWeb
     /** Link "buka issue" di tabel rekap: halaman Daily Issue dengan popup issue itu terbuka. */
     public function rowLink(Issue $i): string
     {
-        return rtrim(url('/'), '/').'/?issue='.$i->issueNo;
+        return rtrim(url('/'), '/').'/?issue='.($i->ref ?? $i->issueNo);
     }
 
     public function issuesPayload(?string $start, ?string $end): array
