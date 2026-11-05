@@ -191,10 +191,16 @@ td.no { color: var(--navy-ink); }
 tbody tr[data-id] { cursor: pointer; }
 
 /* filter (periode, tim, kategori) */
-.filters { padding: 6px 18px; }
-.f-row { display: flex; align-items: center; gap: 10px 14px; flex-wrap: wrap; padding: 9px 0; }
+.filters { padding: 4px 16px; }
+.f-row { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; padding: 10px 0; }
+.f-row .grow { flex: 1 1 260px; min-width: 200px; width: auto; padding: 7px 14px; font-size: 13px; }
+.filters .seg button { padding: 6px 11px; }
+.filters .dates input { width: 138px; }
+.filters .month-pick { margin-left: 2px; }
+.filters .month-pick input { width: 150px; }
+.filters #reset-filter { padding: 7px 14px; }
 .f-row + .f-row { border-top: 1px dashed var(--border); }
-.f-label { font-size: 12px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: #6d7a99; min-width: 70px; }
+.f-label { font-size: 12px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: #6d7a99; min-width: 64px; }
 .f-row .f-label + .chips + .f-label { margin-left: 10px; min-width: 0; }
 .chips { display: inline-flex; flex-wrap: wrap; gap: 7px; }
 .chip { border: 1px solid #cfd8ea; background: #fff; padding: 5px 14px; border-radius: 999px; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; color: #6d7a99; font-weight: 600; font-size: 13px; }

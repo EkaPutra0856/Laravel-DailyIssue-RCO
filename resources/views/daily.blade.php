@@ -69,9 +69,7 @@
     <div class="chips" id="team-chips">
       @foreach ($teams as $t)<button class="chip" data-t="{{ $t }}">{{ $t }}</button>@endforeach
     </div>
-  </div>
-  <div class="f-row">
-    <input class="pill-search grow" id="q" type="search" placeholder="Cari nomor issue, aplikasi, pelapor, PIC, atau isi issue... (tekan /)">
+    <input class="pill-search grow" id="q" type="search" placeholder="Cari nomor, aplikasi, pelapor, PIC, isi issue... (tekan /)">
     <button class="btn" id="reset-filter">Reset filter</button>
   </div>
 </section>
