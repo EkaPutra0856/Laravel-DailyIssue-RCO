@@ -61,8 +61,13 @@
     document.body.classList.toggle("role-engineer", st.role === "engineer");
     const label = `${st.role === "engineer" ? "Engineer" : "Polisi"}${st.nama ? " · " + st.nama : ""}`;
     $("#role-chip").textContent = label;
+    // Topbar: nama + label peran (mis. "Eka [Polisi]")
     const top = $("#topbar-user");
-    if (top) top.textContent = st.nama || (st.role === "engineer" ? "Engineer" : "Polisi");
+    if (top) {
+      const role = st.role === "engineer" ? "Engineer" : "Polisi";
+      top.innerHTML = `${st.nama ? `<span class="tu-name">${esc(st.nama)}</span>` : ""}<span class="role-badge ${st.role}">${role}</span>`;
+      top.title = `Masuk sebagai ${role}${st.nama ? ` (${st.nama})` : ""} · klik untuk ganti`;
+    }
     renderRows();
   }
 

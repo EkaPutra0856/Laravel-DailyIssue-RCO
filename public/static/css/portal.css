@@ -33,8 +33,11 @@ a { color: var(--blue); }
 .hamburger { background: none; border: 0; color: #fff; cursor: pointer; padding: 6px; border-radius: 8px; display: grid; place-items: center; }
 .hamburger:hover { background: rgba(255, 255, 255, .12); }
 .spacer { flex: 1; }
-.topbar-user { font-weight: 600; font-size: 13.5px; cursor: pointer; white-space: nowrap; }
-.topbar-user::after { content: " ▾"; font-size: 11px; }
+.topbar-user { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: 13.5px; cursor: pointer; white-space: nowrap; }
+.topbar-user::after { content: "▾"; font-size: 11px; }
+.role-badge { font-size: 11px; font-weight: 700; letter-spacing: .3px; padding: 2px 9px; border-radius: 999px; }
+.role-badge.polisi { background: #f8c22a; color: #4a3500; }
+.role-badge.engineer { background: #3cc06f; color: #06351a; }
 
 .sidebar { position: fixed; top: 58px; bottom: 0; left: 0; width: 250px; background: var(--surface); border-right: 1px solid var(--border); padding: 18px 14px; overflow-y: auto; z-index: 20; transition: transform .2s; }
 .menu { margin-top: 14px; display: grid; gap: 2px; }
