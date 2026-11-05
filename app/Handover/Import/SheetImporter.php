@@ -74,8 +74,9 @@ final class SheetImporter
         $issues = IssueService::fixTypoDates(Rules::buildIssues($sheet, $cols), $year, $month);
         DB::transaction(function () use ($issues, $rows, $cols, $extra, $tab, $overwrite, &$stat) {
             foreach ($issues as $i) {
-                $existing = DailyIssue::where('sumber_tab', $tab)->where('sumber_baris', $i->issueNo)->first();
-                if ($existing && ! $overwrite) {
+                // withTrashed: issue yang sudah dihapus polisi tidak dimunculkan lagi oleh impor ulang
+                $existing = DailyIssue::withTrashed()->where('sumber_tab', $tab)->where('sumber_baris', $i->issueNo)->first();
+                if ($existing && (! $overwrite || $existing->trashed())) {
                     $stat['dilewati']++;
 
                     continue;

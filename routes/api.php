@@ -8,9 +8,8 @@ use Illuminate\Support\Facades\Route;
 
 // Prefix /api dipasang di bootstrap/app.php. Tanpa sesi/cookie; POST/PUT wajib JSON (lihat RequireJson).
 Route::middleware([WebPassword::class, RequireJson::class])->group(function () {
-    // Rekap (dashboard rekap & Export ke Chat)
+    // Kirim rekap ke Telegram (popup polisi di halaman Daily Issue)
     Route::get('/config', [HandoverController::class, 'config']);
-    Route::get('/issues', [HandoverController::class, 'issues']);
     Route::post('/preview', [HandoverController::class, 'preview']);
     Route::post('/send', [HandoverController::class, 'send']);
 
@@ -20,6 +19,7 @@ Route::middleware([WebPassword::class, RequireJson::class])->group(function () {
     Route::get('/daily/issues/{id}', [DailyIssueController::class, 'show'])->whereNumber('id');
     // POST (bukan PUT) supaya bisa membawa lampiran: PHP tidak membaca multipart pada PUT.
     Route::post('/daily/issues/{id}', [DailyIssueController::class, 'update'])->whereNumber('id');
+    Route::delete('/daily/issues/{id}', [DailyIssueController::class, 'destroy'])->whereNumber('id');
     Route::get('/daily/export', [DailyIssueController::class, 'export']);
     Route::put('/daily/issues/{id}/tindak-lanjut', [DailyIssueController::class, 'tindakLanjut'])->whereNumber('id');
     Route::get('/daily/aplikasi', [DailyIssueController::class, 'aplikasi']);

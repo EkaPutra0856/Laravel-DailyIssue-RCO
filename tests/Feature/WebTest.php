@@ -34,14 +34,11 @@ class WebTest extends TestCase
         ]);
     }
 
-    private function issues(string $query = '?start=2026-10-01&end=2026-10-31')
+    public function test_rekap_page_removed_and_health(): void
     {
-        return $this->getJson('/api/issues'.$query);
-    }
-
-    public function test_rekap_page_and_health(): void
-    {
-        $this->get('/rekap')->assertOk()->assertSee('static/js/app.js')
+        $this->get('/rekap')->assertNotFound();      // halaman rekap lama sudah digabung ke Daily Issue
+        $this->getJson('/api/issues')->assertNotFound();
+        $this->get('/')->assertOk()->assertDontSee('Rekap Handover')
             ->assertHeader('Content-Security-Policy')->assertHeader('X-Content-Type-Options', 'nosniff');
         $this->get('/healthz')->assertOk()->assertExactJson(['ok' => true]);
     }
@@ -64,23 +61,11 @@ class WebTest extends TestCase
             ->assertJsonPath('chat', ['id' => -5023011113, 'title' => 'TesBot']);
     }
 
-    public function test_issues_payload_has_links_and_categories(): void
-    {
-        $data = $this->issues()->assertOk()->json();
-        $by = array_column($data['issues'], null, 'issue_no');
-        $this->assertSame('pending', $by[3]['category']);
-        $this->assertSame('Tim 1', $by[3]['team']);
-        $this->assertSame('done', $by[6]['category']);
-        $this->assertStringEndsWith('/?issue=3', $by[3]['link']);  // buka issue di halaman Daily Issue
-        $this->assertArrayNotHasKey(14, $by);
-        $this->assertFalse($data['updating']);
-    }
-
     public function test_bad_range(): void
     {
-        $this->issues('?start=2026-10-31&end=2026-10-01')->assertStatus(400)
+        $this->postJson('/api/preview', [...self::BODY, 'start' => '2026-10-31', 'end' => '2026-10-01'])->assertStatus(400)
             ->assertJsonPath('error', 'Tanggal akhir lebih awal dari tanggal mulai');
-        $this->issues('?start=x&end=y')->assertStatus(400);
+        $this->postJson('/api/preview', [...self::BODY, 'start' => 'x', 'end' => 'y'])->assertStatus(400);
     }
 
     public function test_preview_matches_bot_format(): void
@@ -132,10 +117,10 @@ class WebTest extends TestCase
     public function test_password(): void
     {
         config(['handover.web.password' => 'rahasia']);
-        $this->get('/rekap')->assertStatus(401)->assertHeader('WWW-Authenticate');
+        $this->get('/')->assertStatus(401)->assertHeader('WWW-Authenticate');
         $this->getJson('/api/config')->assertStatus(401);
         $this->get('/healthz')->assertOk();  // tanpa login
-        $this->get('/rekap', ['Authorization' => 'Basic '.base64_encode('siapa:rahasia')])->assertOk();
-        $this->get('/rekap', ['Authorization' => 'Basic '.base64_encode('siapa:salah')])->assertStatus(401);
+        $this->get('/', ['Authorization' => 'Basic '.base64_encode('siapa:rahasia')])->assertOk();
+        $this->get('/', ['Authorization' => 'Basic '.base64_encode('siapa:salah')])->assertStatus(401);
     }
 }

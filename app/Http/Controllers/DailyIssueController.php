@@ -213,10 +213,12 @@ class DailyIssueController extends Controller
     {
         $today = CarbonImmutable::now(config('handover.timezone'))->toDateString();
         [$s, $e] = HandoverWeb::parseRange($request->query('start', $today), $request->query('end', $today));
-        $team = in_array($request->query('team'), Teams::ALL, true) ? $request->query('team') : null;
+        // ?teams=Tim 1,Tim 2 (chip tim di halaman); ?team= tetap diterima. Semua tim dipilih = tanpa filter.
+        $teams = array_values(array_intersect(Teams::ALL, explode(',', (string) $request->query('teams', $request->query('team', '')))));
+        $team = $teams && count($teams) < count(Teams::ALL) ? implode(', ', $teams) : null;
         $rows = DailyIssue::query()
             ->whereBetween('tanggal', [$s->toDateString(), $e->toDateString()])
-            ->when($team, fn ($q) => $q->where('team', $team))
+            ->when($team, fn ($q) => $q->whereIn('team', $teams))
             ->orderBy('tanggal')->orderBy('nomor')
             ->with('lampiran')
             ->get();
@@ -273,6 +275,20 @@ class DailyIssueController extends Controller
         return response()->download($path, $nama, [
             'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         ])->deleteFileAfterSend();
+    }
+
+    /** Polisi menghapus issue (soft delete: hilang dari tabel/rekap/bot/Excel, data & lampiran tetap tersimpan). */
+    public function destroy(Request $request, int $id): JsonResponse
+    {
+        $issue = DailyIssue::find($id);
+        if (! $issue) {
+            return self::json(['error' => "Issue #{$id} tidak ditemukan"], 404);
+        }
+        $issue->dihapus_oleh = mb_substr(trim((string) (self::body($request)['nama'] ?? '')), 0, 100) ?: null;
+        $issue->save();
+        $issue->delete();
+
+        return self::json(['deleted' => $issue->id, 'nomor' => $issue->nomor, 'bulan' => $issue->bulan]);
     }
 
     /** Gambar ditampilkan langsung; file lain selalu diunduh (tidak dibuka di browser). */

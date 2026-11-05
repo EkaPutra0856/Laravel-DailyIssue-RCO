@@ -122,10 +122,11 @@ class DailyIssueTest extends TestCase
         $this->assertStringContainsString('Total Pending: 1 Issue (Putih)', $msg);
         $this->assertStringContainsString('Total On Progress: 1 Issue (Kuning)', $msg);
 
-        // Dashboard rekap ikut membaca database dan link-nya membuka popup issue
-        $by = array_column($this->getJson('/api/issues?start=2026-11-05&end=2026-11-05')->json('issues'), null, 'issue_no');
-        $this->assertSame('done', $by[$c['id']]['category']);
-        $this->assertStringEndsWith("/?issue={$b['id']}", $by[$b['id']]['link']);
+        // Popup "Kirim ke Telegram" polisi: hanya issue yang tampil di tabel (kunci bulan#nomor)
+        $msg = $this->postJson('/api/preview', ['start' => '2026-11-05', 'end' => '2026-11-05',
+            'categories' => ['progress', 'done'], 'keys' => ["{$b['bulan']}#{$b['nomor']}"]])->assertOk()->json('messages.0');
+        $this->assertStringContainsString("Issue {$b['nomor']} — Hendrik", $msg);
+        $this->assertStringNotContainsString('Elsa', $msg);
     }
 
     public function test_polisi_uploads_images_and_files(): void

@@ -9,7 +9,12 @@ Data issue sekarang disimpan di **database MySQL**, tidak lagi di spreadsheet:
 - **Daily Issue RCO** (`/`): polisi mencatat issue lewat popup (status otomatis Pending), engineer
   menindaklanjuti lewat popup (status, PIC, waktu mulai, tanggal finish, waktu selesai). Submit engineer hanya
   bisa kalau PIC terisi dan status On Progress / Trouble / Done. Nama aplikasi otomatis mengisi Team.
-- **Rekap Handover** (`/rekap`), bot `/rekap`, dan `handover:rekap` membaca database yang sama.
+  - Filter periode (hari ini s/d bulan lalu, rentang tanggal, pilih bulan), chip tim & kategori, pencarian,
+    panel **Per Tim**, dan **Download Excel** untuk semua peran.
+  - Khusus polisi: **Edit** & **Hapus** issue (hapus = soft delete, data tetap di database), dan
+    **Kirim ke Telegram** (pratinjau, salin isi chat, kirim) untuk issue yang sedang tampil.
+  - Nomor issue mulai dari 1 tiap bulan.
+- Bot `/rekap` dan `handover:rekap` membaca database yang sama (format pesan sama dengan Kirim ke Telegram).
 - Issue lama disalin sekali dari spreadsheet dengan `handover:import` (spreadsheet hanya dibaca).
 
 Aturan rekap dan format pesan di-porting dari versi Python dan sudah dicocokkan dengan data asli.
@@ -102,7 +107,7 @@ menampilkan `Conflict: terminated by other getUpdates request`. Versi web boleh 
 - Ditampilkan di dalam portal (iframe): pakai `/?embed=1` supaya topbar & sidebar halaman ini disembunyikan.
   Alamat portal wajib dicantumkan di `PORTAL_ORIGIN` (contoh `http://172.18.66.243`); selain itu browser menolak
   menampilkan halaman ini di iframe. `PORTAL_URL` dipakai untuk menu **Home** di sidebar.
-- Buka issue tertentu langsung: `/?issue=3129` (link di tabel Rekap memakai ini).
+- Buka issue tertentu langsung (popup terbuka): `/?issue=<id>`.
 - Catatan: tanpa login, peran hanya dibedakan di tampilan. Akses tetap dijaga oleh portal / `WEB_PASSWORD`.
 
 ## Keamanan sheet asli

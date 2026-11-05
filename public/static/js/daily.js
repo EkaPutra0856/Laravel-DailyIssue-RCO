@@ -15,7 +15,7 @@
   const st = {
     role: "polisi", nama: "",
     preset: "today", start: "", end: "",
-    team: "", q: "", hidden: new Set(),   // status yang disembunyikan (klik kartu ringkasan)
+    teams: new Set(TEAMS), q: "", hidden: new Set(),   // tim yang dipilih; status yang disembunyikan
     rows: [], byId: new Map(), apps: new Map(),
     loading: false, error: "", fetchedAt: null, current: null,
   };
@@ -73,7 +73,9 @@
     st.preset = p;
     if (p === "today") [st.start, st.end] = [d(0), d(0)];
     if (p === "yesterday") [st.start, st.end] = [d(-1), d(-1)];
-    if (p === "week") [st.start, st.end] = [d(-6), d(0)];
+    const dow = (t.getDay() + 6) % 7;  // Senin = 0
+    if (p === "week") [st.start, st.end] = [d(-dow), d(0)];
+    if (p === "lastweek") [st.start, st.end] = [d(-dow - 7), d(-dow - 1)];
     if (p === "month") [st.start, st.end] = [isoDate(new Date(t.getFullYear(), t.getMonth(), 1)), d(0)];
     if (p === "lastmonth") [st.start, st.end] = [isoDate(new Date(t.getFullYear(), t.getMonth() - 1, 1)), isoDate(new Date(t.getFullYear(), t.getMonth(), 0))];
     syncPeriod();
@@ -100,7 +102,7 @@
 
   function updateExcelLink() {
     const q = new URLSearchParams({ start: st.start, end: st.end });
-    if (st.team) q.set("team", st.team);
+    if (st.teams.size < TEAMS.length) q.set("teams", [...st.teams].join(","));
     $("#btn-excel").href = `api/daily/export?${q}`;
   }
 
@@ -138,12 +140,12 @@
   // ---------- render ----------
   function visibleRows() {
     const q = st.q.toLowerCase();
-    return st.rows.filter((r) => !st.hidden.has(r.status) && (!st.team || r.team === st.team) && (!q ||
+    return st.rows.filter((r) => !st.hidden.has(r.status) && st.teams.has(r.team) && (!q ||
       `${r.nomor} ${r.issue} ${r.aplikasi} ${r.team} ${r.pelapor} ${r.pic} ${r.pencatat_issue} ${STATUS[r.status]}`.toLowerCase().includes(q)));
   }
 
   function renderTiles() {
-    const base = st.rows.filter((r) => !st.team || r.team === st.team);
+    const base = st.rows.filter((r) => st.teams.has(r.team));
     for (const k of Object.keys(STATUS)) {
       $(`[data-count="${k}"]`).textContent = st.rows.length || !st.loading ? base.filter((r) => r.status === k).length : "–";
       $(`.tile[data-status="${k}"]`).classList.toggle("off", st.hidden.has(k));
@@ -209,7 +211,24 @@
     if (st.loading && !st.rows.length) $("#empty").hidden = true;
   }
 
-  function renderAll(changed = null) { renderTiles(); renderRows(changed); }
+  // Chip tim & kategori + panel Per Tim (bar: pending, on progress, trouble, done)
+  function renderFilters() {
+    $$("#team-chips .chip").forEach((b) => b.classList.toggle("on", st.teams.has(b.dataset.t)));
+    $$("#status-chips .chip").forEach((b) => b.classList.toggle("on", !st.hidden.has(b.dataset.s)));
+    $("#teams").innerHTML = TEAMS.map((t) => {
+      const rows = st.rows.filter((r) => r.team === t);
+      const c = Object.fromEntries(Object.keys(STATUS).map((k) => [k, rows.filter((r) => r.status === k).length]));
+      const tot = rows.length || 1;
+      const parts = [`${c.pending} pending`, `${c.onprogress} progress`, c.trouble ? `${c.trouble} trouble` : "", `${c.done} done`].filter(Boolean);
+      return `<div class="team-row ${st.teams.has(t) ? "" : "off"}" data-t="${esc(t)}" title="Klik: tampilkan hanya ${esc(t)}. Shift+klik: tambah/kurangi">
+        <div class="tr-h"><b>${esc(t)}</b><span class="muted">${parts.join(" · ")}</span></div>
+        <div class="bar">${Object.keys(STATUS).map((k) => `<span class="b-${k}" style="width:${(c[k] / tot) * 100}%"></span>`).join("")}</div>
+      </div>`;
+    }).join("");
+    updateExcelLink();
+  }
+
+  function renderAll(changed = null) { renderTiles(); renderFilters(); renderRows(changed); }
 
   // ---------- popup umum ----------
   function openModal(id) {
@@ -248,6 +267,7 @@
     removeIds.clear();
     $("#m-new-t").textContent = r ? `Edit ${issueLabel(r)}` : "Catat Issue Baru";
     $("#new-submit").textContent = r ? "Simpan Perubahan" : "Simpan Issue";
+    $("#edit-delete").hidden = !r;
     const status = r ? r.status : "pending";
     $("#new-status").className = `badge ${status}`;
     $("#new-status").textContent = STATUS[status];
@@ -496,6 +516,90 @@
     st.role === "engineer" ? openProgress(r) : openDetail(r);
   }
 
+  // ---------- polisi: hapus issue ----------
+  let deleting = null;
+  function openDelete(r) {
+    deleting = r;
+    const box = $("#m-delete");
+    box.querySelector(".form-error").hidden = true;
+    $("#delete-text").innerHTML = `Hapus <b>${esc(issueLabel(r))}</b> (${esc(r.aplikasi || "tanpa aplikasi")}, ${esc(r.team)})?`;
+    $$(".modal-bg").filter((m) => !m.hidden).forEach(closeModal);
+    openModal("#m-delete");
+  }
+  async function confirmDelete() {
+    const btn = $("#delete-yes");
+    btn.disabled = true;
+    try {
+      await api(`api/daily/issues/${deleting.id}`, "DELETE", { nama: st.nama });
+      closeModal($("#m-delete"));
+      Portal.toast(`${issueLabel(deleting)} dihapus`);
+      await load(true);
+    } catch (e) {
+      const err = $("#m-delete .form-error");
+      err.textContent = e.message; err.hidden = false;
+    } finally { btn.disabled = false; }
+  }
+
+  // ---------- polisi: kirim rekap ke Telegram (format sama dengan bot /rekap) ----------
+  const CAT_OF = { pending: "pending", onprogress: "progress", trouble: "progress", done: "done" };
+  let tgReq = 0, tgMessages = [];
+  // Yang dikirim = issue yang sedang tampil di tabel (periode, tim, kategori, pencarian).
+  function tgBody() {
+    const rows = visibleRows();
+    const cats = [...new Set(Object.keys(STATUS).filter((k) => !st.hidden.has(k)).map((k) => CAT_OF[k]))];
+    return { start: st.start, end: st.end, categories: cats, teams: [...st.teams], detail: $("#opt-detail").checked,
+      split: $("#opt-split").checked, keys: rows.map((r) => `${r.bulan}#${r.nomor}`) };
+  }
+  async function tgPreview() {
+    const id = ++tgReq;
+    $("#tg-preview").innerHTML = '<div class="bubble"><span class="spin"></span> Menyusun pesan…</div>';
+    $("#tg-send").disabled = true; $("#tg-copy").disabled = true; $("#tg-confirm").hidden = true;
+    try {
+      const data = await api("api/preview", "POST", tgBody());
+      if (id !== tgReq) return;
+      tgMessages = data.messages;
+      const now = new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+      // Pesan berisi HTML Telegram yang disusun & di-escape server (sama dengan yang dikirim bot)
+      $("#tg-preview").innerHTML = data.messages.map((m) =>
+        `<div class="bubble"><div class="bot-name">Handover Bot</div>${m}<span class="bmeta">${now}</span></div>`).join("");
+      const chat = data.chat;
+      $("#tg-target").innerHTML = chat ? `Tujuan: <b>${esc(chat.title || "Grup Telegram")}</b> <span class="muted">(${esc(chat.id)})</span>`
+        : "Tujuan Telegram belum diatur di .env";
+      $("#tg-info").textContent = `${data.messages.length} pesan · ${visibleRows().length} issue`;
+      $("#tg-send").disabled = !chat; $("#tg-copy").disabled = false;
+    } catch (e) {
+      if (id !== tgReq) return;
+      $("#tg-preview").innerHTML = `<div class="bubble err">❌ ${esc(e.message)}</div>`;
+    }
+  }
+  function openTelegram() {
+    if (!visibleRows().length) { Portal.toast("Tidak ada issue yang tampil untuk dikirim", true); return; }
+    openModal("#m-tg");
+    tgPreview();
+  }
+  const plainText = (html) => { const d = document.createElement("div"); d.innerHTML = html; return d.textContent; };
+  async function tgCopy() {
+    const text = tgMessages.map(plainText).join("\n\n");
+    try { await navigator.clipboard.writeText(text); Portal.toast("Isi chat disalin, tinggal tempel di Telegram/WhatsApp"); }
+    catch (e) {
+      // Fallback: browser lama / iframe tanpa izin clipboard
+      const ta = document.createElement("textarea"); ta.value = text; document.body.appendChild(ta); ta.select();
+      const ok = document.execCommand("copy"); ta.remove();
+      Portal.toast(ok ? "Isi chat disalin" : "Browser menolak akses clipboard", !ok);
+    }
+  }
+  async function tgSend() {
+    const btn = $("#tg-confirm-yes");
+    btn.disabled = true; btn.innerHTML = '<span class="spin"></span> Mengirim…';
+    try {
+      const r = await api("api/send", "POST", tgBody());
+      closeModal($("#m-tg"));
+      Portal.toast(`${r.sent} pesan terkirim ke ${r.chat.title || r.chat.id}`);
+    } catch (e) {
+      Portal.toast(e.message, true);
+    } finally { btn.disabled = false; btn.textContent = "Ya, kirim sekarang"; }
+  }
+
   // ---------- event ----------
   function bind() {
     $$("#presets button").forEach((b) => b.addEventListener("click", () => { setPreset(b.dataset.p); load(); }));
@@ -505,7 +609,30 @@
       if (st.start && st.end && st.start <= st.end) load();
     }));
     $("#month").addEventListener("change", (e) => { if (e.target.value) { setMonth(e.target.value); load(); } });
-    $("#team-filter").addEventListener("change", (e) => { st.team = e.target.value; updateExcelLink(); renderAll(); });
+    // Chip tim (minimal satu), chip kategori, klik panel Per Tim, reset
+    $("#team-chips").addEventListener("click", (e) => {
+      const b = e.target.closest(".chip"); if (!b) return;
+      const t = b.dataset.t;
+      if (st.teams.has(t) && st.teams.size > 1) st.teams.delete(t); else st.teams.add(t);
+      renderAll();
+    });
+    $("#status-chips").addEventListener("click", (e) => {
+      const b = e.target.closest(".chip"); if (!b) return;
+      const s = b.dataset.s;
+      st.hidden.has(s) ? st.hidden.delete(s) : st.hidden.add(s);
+      renderAll();
+    });
+    $("#teams").addEventListener("click", (e) => {
+      const r = e.target.closest(".team-row"); if (!r) return;
+      const t = r.dataset.t;
+      if (e.shiftKey) { if (st.teams.has(t) && st.teams.size > 1) st.teams.delete(t); else st.teams.add(t); }
+      else st.teams = st.teams.size === 1 && st.teams.has(t) ? new Set(TEAMS) : new Set([t]);
+      renderAll();
+    });
+    $("#reset-filter").addEventListener("click", () => {
+      st.teams = new Set(TEAMS); st.hidden.clear(); st.q = ""; $("#q").value = "";
+      renderAll();
+    });
     let qTimer;
     $("#q").addEventListener("input", (e) => { clearTimeout(qTimer); qTimer = setTimeout(() => { st.q = e.target.value.trim(); renderRows(); }, 150); });
     $$(".tile").forEach((t) => t.addEventListener("click", () => {
@@ -550,6 +677,19 @@
       renderOldFiles();
     });
     $("#btn-new").addEventListener("click", openNew);
+    $("#btn-tg").addEventListener("click", openTelegram);
+    ["#opt-detail", "#opt-split"].forEach((s) => $(s).addEventListener("change", tgPreview));
+    $("#tg-copy").addEventListener("click", tgCopy);
+    $("#tg-send").addEventListener("click", () => {
+      const chat = $("#tg-target b")?.textContent || "Telegram";
+      $("#tg-confirm-text").innerHTML = `Kirim <b>${tgMessages.length} pesan</b> ke <b>${esc(chat)}</b>?`;
+      $("#tg-confirm").hidden = false;
+    });
+    $("#tg-confirm-no").addEventListener("click", () => { $("#tg-confirm").hidden = true; });
+    $("#tg-confirm-yes").addEventListener("click", tgSend);
+    $("#edit-delete").addEventListener("click", () => openDelete(editing));
+    $("#detail-to-delete").addEventListener("click", () => openDelete(st.current));
+    $("#delete-yes").addEventListener("click", confirmDelete);
     $("#detail-to-progress").addEventListener("click", () => { closeModal($("#m-detail")); openProgress(st.current); });
     $("#detail-to-edit").addEventListener("click", () => { closeModal($("#m-detail")); openEdit(st.current); });
 

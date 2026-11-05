@@ -109,6 +109,45 @@ class EditExportTest extends TestCase
         $this->assertStringContainsString('Rekap Daily Issue RCO – Oktober 2026', $summary);
     }
 
+    public function test_polisi_deletes_issue_softly(): void
+    {
+        $a = $this->create();
+        $b = $this->create();
+        $this->deleteJson("/api/daily/issues/{$a['id']}", ['nama' => 'Tes Polisi'])->assertOk()
+            ->assertJsonPath('deleted', $a['id'])->assertJsonPath('nomor', 1);
+
+        // Hilang dari tabel, detail, rekap/Telegram, dan Excel
+        $this->assertSame([$b['id']], array_column($this->getJson('/api/daily/issues?start=2026-11-05&end=2026-11-05')->json('issues'), 'id'));
+        $this->getJson("/api/daily/issues/{$a['id']}")->assertNotFound();
+        $msg = $this->postJson('/api/preview', ['start' => '2026-11-05', 'end' => '2026-11-05', 'categories' => ['pending']])->json('messages.0');
+        $this->assertStringContainsString('Total Pending: 1 Issue', $msg);
+        $this->deleteJson("/api/daily/issues/{$a['id']}")->assertNotFound();  // sudah dihapus
+
+        // Data tetap ada di database (bisa dipulihkan), dan nomornya tidak dipakai ulang
+        $trashed = DailyIssue::withTrashed()->find($a['id']);
+        $this->assertTrue($trashed->trashed());
+        $this->assertSame('Tes Polisi', $trashed->dihapus_oleh);
+        $this->assertSame(3, $this->create()['nomor']);
+    }
+
+    public function test_export_multiple_teams(): void
+    {
+        $this->create(['waktu_lapor' => '2026-10-02T08:00', 'team' => 'Tim 1']);
+        $this->create(['waktu_lapor' => '2026-10-02T09:00', 'team' => 'Tim 2']);
+        $this->create(['waktu_lapor' => '2026-10-02T10:00', 'team' => 'Tim 3']);
+        $res = $this->get('/api/daily/export?start=2026-10-01&end=2026-10-31&teams='.rawurlencode('Tim 1,Tim 3'))->assertOk();
+        $this->assertStringContainsString('Oktober 2026 - Tim 1, Tim 3.xlsx', $res->headers->get('Content-Disposition'));
+        $path = tempnam(sys_get_temp_dir(), 'x');
+        file_put_contents($path, file_get_contents($res->getFile()->getPathname()));
+        $zip = new ZipArchive;
+        $zip->open($path);
+        $sheet = $zip->getFromName('xl/worksheets/sheet1.xml');
+        $zip->close();
+        unlink($path);
+        $this->assertSame(3, substr_count($sheet, '<row '));  // judul + Tim 1 + Tim 3
+        $this->assertStringNotContainsString('>Tim 2<', $sheet);
+    }
+
     public function test_export_team_filter_and_bad_range(): void
     {
         $this->create(['waktu_lapor' => '2026-10-02T08:00']);

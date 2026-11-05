@@ -7,10 +7,13 @@ use App\Handover\Dates;
 use App\Handover\Issue;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /** Satu issue harian. Polisi mengisi bagian lapor, engineer mengisi bagian penyelesaian. */
 class DailyIssue extends Model
 {
+    use SoftDeletes;  // hapus oleh polisi = ditandai deleted_at, data tetap ada
+
     public const STATUSES = ['pending', 'onprogress', 'trouble', 'done'];
     // Status yang boleh dikirim engineer (pending = belum dikerjakan, bukan hasil tindak lanjut).
     public const ENGINEER_STATUSES = ['onprogress', 'trouble', 'done'];
@@ -42,7 +45,7 @@ class DailyIssue extends Model
             $bulan = $issue->tanggal?->format('Y-m');
             if ($bulan && ($issue->nomor === null || $issue->bulan !== $bulan)) {
                 $issue->bulan = $bulan;
-                $issue->nomor = (int) self::query()->where('bulan', $bulan)->lockForUpdate()->max('nomor') + 1;
+                $issue->nomor = (int) self::withTrashed()->where('bulan', $bulan)->lockForUpdate()->max('nomor') + 1;
             }
         });
     }

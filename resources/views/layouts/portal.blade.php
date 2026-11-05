@@ -29,9 +29,6 @@
     <a class="menu-item @if (request()->is('/')) active @endif" href="{{ url('/') }}">
       <span class="mi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg></span>Daily Issue RCO
     </a>
-    <a class="menu-item @if (request()->is('rekap')) active @endif" href="{{ url('/rekap') }}">
-      <span class="mi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 19V5M4 19h16M8 15v-4M12 15V8M16 15v-6"/></svg></span>Rekap Handover
-    </a>
   </nav>
 </aside>
 

@@ -9,5 +9,4 @@ Route::get('/healthz', [HandoverController::class, 'healthz']);
 
 Route::middleware(WebPassword::class)->group(function () {
     Route::get('/', [DailyIssueController::class, 'page']);           // Daily Issue RCO
-    Route::get('/rekap', [HandoverController::class, 'rekap']);        // dashboard rekap + Export ke Chat
 });

@@ -44,38 +44,57 @@
   @endforeach
 </div>
 
-<div class="section-label">Daftar Issue</div>
-<section class="card">
-  <div class="toolbar">
+<div class="section-label">Filter</div>
+<section class="card filters">
+  <div class="f-row">
+    <span class="f-label">Periode</span>
     <div class="seg" id="presets">
       <button data-p="today">Hari ini</button>
       <button data-p="yesterday">Kemarin</button>
-      <button data-p="week">7 hari</button>
+      <button data-p="week">Minggu ini</button>
+      <button data-p="lastweek">Minggu lalu</button>
       <button data-p="month">Bulan ini</button>
       <button data-p="lastmonth">Bulan lalu</button>
     </div>
-    <label class="month-pick" title="Lihat rekap bulan tertentu">Bulan
-      <input type="month" id="month" aria-label="Pilih bulan">
-    </label>
     <div class="dates">
       <input type="date" id="start" aria-label="Tanggal mulai"> <span class="muted">s/d</span>
       <input type="date" id="end" aria-label="Tanggal akhir">
     </div>
-    <select id="team-filter" aria-label="Filter team">
-      <option value="">Semua team</option>
-      @foreach ($teams as $t)<option>{{ $t }}</option>@endforeach
-    </select>
-    <input class="pill-search grow" id="q" type="search" placeholder="Cari issue, aplikasi, pelapor, PIC... (tekan /)">
+    <label class="month-pick" title="Lihat rekap bulan tertentu">Bulan
+      <input type="month" id="month" aria-label="Pilih bulan">
+    </label>
   </div>
+  <div class="f-row">
+    <span class="f-label">Tim</span>
+    <div class="chips" id="team-chips">
+      @foreach ($teams as $t)<button class="chip" data-t="{{ $t }}">{{ $t }}</button>@endforeach
+    </div>
+    <span class="f-label">Kategori</span>
+    <div class="chips" id="status-chips">
+      @foreach ($statuses as $k => $label)<button class="chip" data-s="{{ $k }}"><span class="dot {{ $k }}"></span>{{ $label }}</button>@endforeach
+    </div>
+  </div>
+  <div class="f-row">
+    <input class="pill-search grow" id="q" type="search" placeholder="Cari nomor issue, aplikasi, pelapor, PIC, atau isi issue... (tekan /)">
+    <button class="btn" id="reset-filter">Reset filter</button>
+  </div>
+</section>
+
+<div class="grid-main">
+<section class="card">
   <div class="table-head">
+    <h2 class="card-title">Daftar Issue</h2>
     <span class="count" id="count"></span>
     <span class="sync" id="sync" role="status" aria-live="polite" hidden></span>
     <span class="spacer"></span>
-    <a class="btn small outline" id="btn-excel" href="#" title="Unduh issue periode ini (sesuai filter team) sebagai Excel">
+    <a class="btn small outline" id="btn-excel" href="#" title="Unduh issue periode ini (sesuai filter tim) sebagai Excel">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>
       Download Excel
     </a>
-    <a class="link-btn" href="{{ url('/rekap') }}">Rekap &amp; kirim ke Telegram →</a>
+    <button class="btn small tg" id="btn-tg" data-only="polisi" title="Pratinjau, salin, atau kirim rekap issue yang tampil ke grup Telegram">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M21.9 4.6 18.7 19.8c-.2 1.1-.9 1.3-1.8.8l-4.9-3.6-2.4 2.3c-.3.3-.5.5-1 .5l.4-5 9-8.2c.4-.4-.1-.6-.6-.2L6.3 13.4l-4.8-1.5c-1-.3-1.1-1 .2-1.5L20.4 3.2c.9-.3 1.7.2 1.5 1.4z"/></svg>
+      Kirim ke Telegram
+    </button>
   </div>
   <div class="tbl-wrap">
     <table>
@@ -87,6 +106,15 @@
     <div class="empty" id="empty" hidden></div>
   </div>
 </section>
+
+<aside class="card side-panel">
+  <div class="panel-h"><h2 class="card-title">Per Tim</h2><span class="count">klik untuk filter</span></div>
+  <div class="teams" id="teams"></div>
+  <div class="legend">
+    @foreach ($statuses as $k => $label)<span><span class="dot {{ $k }}"></span> {{ $label }}</span>@endforeach
+  </div>
+</aside>
+</div>
 @endsection
 
 @section('modals')
@@ -143,7 +171,7 @@
       <div class="field"><span>Status</span><span class="badge pending" id="new-status">Pending</span><span class="hint" id="new-status-hint">Otomatis untuk issue baru</span></div>
       <p class="form-error span2" hidden></p>
     </div>
-    <div class="modal-f"><button type="button" class="btn" data-close>Batal</button><button class="btn primary" type="submit" id="new-submit">Simpan Issue</button></div>
+    <div class="modal-f"><button type="button" class="btn danger" id="edit-delete" hidden>Hapus Issue</button><span class="spacer"></span><button type="button" class="btn" data-close>Batal</button><button class="btn primary" type="submit" id="new-submit">Simpan Issue</button></div>
   </form>
 </div>
 
@@ -176,7 +204,46 @@
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="m-detail-t">
     <div class="modal-h"><h2 id="m-detail-t">Detail Issue</h2><button class="x" data-close aria-label="Tutup">×</button></div>
     <div class="modal-b"><div class="summary" id="detail-body"></div></div>
-    <div class="modal-f"><button class="btn" data-close>Tutup</button><button class="btn outline" id="detail-to-edit" data-only="polisi">Edit Issue</button><button class="btn primary" id="detail-to-progress" data-only="engineer">Tindak Lanjut</button></div>
+    <div class="modal-f"><button class="btn danger" id="detail-to-delete" data-only="polisi">Hapus</button><span class="spacer"></span><button class="btn" data-close>Tutup</button><button class="btn outline" id="detail-to-edit" data-only="polisi">Edit Issue</button><button class="btn primary" id="detail-to-progress" data-only="engineer">Tindak Lanjut</button></div>
+  </div>
+</div>
+
+{{-- Polisi: hapus issue (konfirmasi) --}}
+<div class="modal-bg" id="m-delete" hidden>
+  <div class="modal small" role="alertdialog" aria-modal="true" aria-labelledby="m-delete-t">
+    <div class="modal-h"><h2 id="m-delete-t">Hapus issue?</h2><button class="x" data-close aria-label="Tutup">×</button></div>
+    <div class="modal-b">
+      <p id="delete-text"></p>
+      <p class="hint">Issue hilang dari tabel, rekap, bot, dan Excel. Data tetap tersimpan di database (bisa dipulihkan admin).</p>
+      <p class="form-error" hidden></p>
+    </div>
+    <div class="modal-f"><button class="btn" data-close>Batal</button><button class="btn danger-solid" id="delete-yes">Ya, hapus</button></div>
+  </div>
+</div>
+
+{{-- Polisi: kirim rekap ke Telegram (format sama dengan bot /rekap) --}}
+<div class="modal-bg" id="m-tg" hidden>
+  <div class="modal wide" role="dialog" aria-modal="true" aria-labelledby="m-tg-t">
+    <div class="modal-h">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="#229ed9"><path d="M21.9 4.6 18.7 19.8c-.2 1.1-.9 1.3-1.8.8l-4.9-3.6-2.4 2.3c-.3.3-.5.5-1 .5l.4-5 9-8.2c.4-.4-.1-.6-.6-.2L6.3 13.4l-4.8-1.5c-1-.3-1.1-1 .2-1.5L20.4 3.2c.9-.3 1.7.2 1.5 1.4z"/></svg>
+      <h2 id="m-tg-t">Kirim ke Telegram</h2><button class="x" data-close aria-label="Tutup">×</button>
+    </div>
+    <div class="tg-opts">
+      <label class="switch"><input type="checkbox" id="opt-detail"> Tampilkan nama aplikasi</label>
+      <label class="switch"><input type="checkbox" id="opt-split"> Tiap kategori bubble terpisah</label>
+      <span class="muted" id="tg-info"></span>
+    </div>
+    <div class="tg-area" id="tg-preview"></div>
+    <div class="confirm-box" id="tg-confirm" hidden>
+      <span id="tg-confirm-text"></span><span class="spacer"></span>
+      <button class="btn" id="tg-confirm-no">Batal</button><button class="btn tg" id="tg-confirm-yes">Ya, kirim sekarang</button>
+    </div>
+    <div class="modal-f">
+      <span class="tg-target" id="tg-target"></span><span class="spacer"></span>
+      <button class="btn" data-close>Tutup</button>
+      <button class="btn" id="tg-copy">Salin isi chat</button>
+      <button class="btn tg" id="tg-send">Kirim ke Telegram</button>
+    </div>
   </div>
 </div>
 

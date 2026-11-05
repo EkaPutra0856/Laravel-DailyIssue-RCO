@@ -16,7 +16,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
-/** Logika dashboard rekap: ambil issue dari database, susun & kirim pesan Telegram. */
+/** Rekap ke Telegram: ambil issue dari database, susun pesan (format bot), pratinjau & kirim. */
 final class HandoverWeb
 {
     public const VERSION = '2.0.0';
@@ -74,41 +74,6 @@ final class HandoverWeb
         } catch (SourceError $err) {
             throw new WebError('Akses data bermasalah: '.$this->scrub($err->getMessage()), 502);
         }
-    }
-
-    /** Link "buka issue" di tabel rekap: halaman Daily Issue dengan popup issue itu terbuka. */
-    public function rowLink(Issue $i): string
-    {
-        return rtrim(url('/'), '/').'/?issue='.($i->ref ?? $i->issueNo);
-    }
-
-    public function issuesPayload(?string $start, ?string $end): array
-    {
-        [$s, $e] = self::parseRange($start, $end);
-        [$issues, $warnings] = $this->load($s, $e);
-
-        return [
-            'start' => $s->toDateString(),
-            'end' => $e->toDateString(),
-            'updating' => false,
-            'fetched_at' => CarbonImmutable::now(config('handover.timezone'))->format('Y-m-d\TH:i:sP'),
-            'warnings' => $warnings,
-            'issues' => array_map(fn (Issue $i) => [
-                'key' => $i->key(),
-                'sheet' => $i->sheet,
-                'issue_no' => $i->issueNo,
-                'tanggal' => $i->tanggal->toDateString(),
-                'team' => $i->team,
-                'aplikasi' => $i->aplikasi,
-                'status' => $i->status,
-                'pic' => $i->pic,
-                'label' => $i->label(),
-                'category' => $i->category->value,
-                'done_reason' => $i->doneReason,
-                'waiting_external' => $i->waitingExternal || $i->trouble,
-                'link' => $this->rowLink($i),
-            ], $issues),
-        ];
     }
 
     // ---------- pesan ----------
