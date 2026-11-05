@@ -6,6 +6,7 @@ use App\Handover\Category;
 use App\Handover\Dates;
 use App\Handover\Issue;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /** Satu issue harian. Polisi mengisi bagian lapor, engineer mengisi bagian penyelesaian. */
 class DailyIssue extends Model
@@ -14,7 +15,8 @@ class DailyIssue extends Model
     // Status yang boleh dikirim engineer (pending = belum dikerjakan, bukan hasil tindak lanjut).
     public const ENGINEER_STATUSES = ['onprogress', 'trouble', 'done'];
     public const STATUS_LABEL = ['pending' => 'Pending', 'onprogress' => 'On Progress', 'trouble' => 'Trouble', 'done' => 'Done'];
-    public const MEDIA = ['WhatsApp Group', 'Personal Chat', 'Email', 'Telepon', 'Lainnya'];
+    public const MEDIA = ['WhatsApp', 'Personal Chat', 'Email', 'Telepon'];  // saran; boleh diketik manual
+    public const MEDIA_DEFAULT = 'WhatsApp';
 
     protected $table = 'daily_issues';
 
@@ -56,7 +58,13 @@ class DailyIssue extends Model
             'waktu_selesai' => self::hhmm($this->waktu_selesai),
             'sumber' => $this->sumber_tab ? "{$this->sumber_tab} baris {$this->sumber_baris}" : null,
             'updated_at' => $this->updated_at?->toIso8601String(),
+            'lampiran' => $this->lampiran->map(fn (Lampiran $l) => $l->toRow())->all(),
         ];
+    }
+
+    public function lampiran(): HasMany
+    {
+        return $this->hasMany(Lampiran::class)->orderBy('id');
     }
 
     /** Ubah ke Issue rekap (dipakai dashboard rekap & bot). Trouble dihitung on progress dengan tanda khusus. */

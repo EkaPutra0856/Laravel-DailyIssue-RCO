@@ -30,7 +30,11 @@
 
   async function api(path, method = "GET", body) {
     const opt = { method, headers: { Accept: "application/json" } };
-    if (body !== undefined) { opt.headers["Content-Type"] = "application/json"; opt.body = JSON.stringify(body); }
+    if (body instanceof FormData) {
+      // Unggah lampiran: browser mengatur Content-Type multipart; header ini menandai request dari halaman sendiri.
+      opt.headers["X-Requested-With"] = "XMLHttpRequest";
+      opt.body = body;
+    } else if (body !== undefined) { opt.headers["Content-Type"] = "application/json"; opt.body = JSON.stringify(body); }
     let r;
     try { r = await fetch(path, opt); } catch (e) { throw new Error("Server tidak bisa dihubungi"); }
     const data = await r.json().catch(() => ({}));
@@ -129,15 +133,26 @@
     return `<button class="btn small outline" data-act="detail" data-id="${r.id}">Detail</button>`;
   }
 
+  const CLIP = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 11-8.5 8.5a5 5 0 0 1-7-7L14 4a3.5 3.5 0 0 1 5 5l-8.5 8.5a2 2 0 0 1-3-3L15 7"/></svg>';
+  // Penanda di tabel: issue ini punya lampiran (isinya dilihat saat issue dibuka).
+  function attBadge(r) {
+    const att = r.lampiran || [];
+    if (!att.length) return "";
+    const img = att.filter((a) => a.gambar).length;
+    const parts = [img && `${img} gambar`, att.length - img && `${att.length - img} file`].filter(Boolean);
+    return `<span class="att-badge" title="${esc(att.map((a) => a.nama).join("\n"))}">${CLIP}${parts.join(" · ")}</span>`;
+  }
+
   function renderRows(changed = null) {
     const rows = visibleRows();
     $("#count").textContent = `${rows.length} issue${rows.length !== st.rows.length ? ` dari ${st.rows.length}` : ""}`;
+    const openTitle = st.role === "engineer" ? "Klik untuk tindak lanjut" : "Klik untuk lihat detail";
     $("#rows").innerHTML = rows.map((r) => {
       const flash = changed && !changed.has(`${r.id}:${r.updated_at}`) ? " flash" : "";
-      return `<tr class="s-${r.status}${flash}">
+      return `<tr class="s-${r.status}${flash}" data-id="${r.id}" title="${openTitle}">
         <td class="no">#${r.id}</td>
         <td class="lapor">${fmtDate(r.tanggal)}<br><span class="muted">${esc(r.waktu_lapor || "")}</span></td>
-        <td class="issue"><div class="clamp" title="${esc(r.issue)}">${esc(r.issue)}</div></td>
+        <td class="issue"><div class="clamp">${esc(r.issue)}</div>${attBadge(r)}</td>
         <td>${esc(r.aplikasi) || '<span class="muted">—</span>'}</td>
         <td><span class="team-tag">${esc(r.team)}</span></td>
         <td>${esc(r.pelapor)}</td>
@@ -200,8 +215,11 @@
     clearFormError(fNew);
     fNew.elements.pencatat_issue.value = st.nama;
     fNew.elements.waktu_lapor.value = nowLocal();
+    fNew.elements.media_laporan.value = fNew.elements.media_laporan.dataset.default || "";
     $("#app-hint").textContent = ""; $("#team-hint").textContent = "";
     teamAuto = null;
+    newFiles = [];
+    renderNewFiles();
     openModal("#m-new");
   }
 
@@ -233,13 +251,17 @@
   async function submitNew(e) {
     e.preventDefault();
     clearFormError(fNew);
-    const body = Object.fromEntries(new FormData(fNew).entries());
+    const body = new FormData(fNew);
+    newFiles.forEach((f) => body.append("lampiran[]", f, f.name));
     const btn = fNew.querySelector("[type=submit]");
     btn.disabled = true;
     try {
       const row = await api("api/daily/issues", "POST", body);
       closeModal($("#m-new"));
-      Portal.toast(`Issue #${row.id} tersimpan (Pending)`);
+      newFiles = [];
+      renderNewFiles();
+      const att = row.lampiran.length ? ` dengan ${row.lampiran.length} lampiran` : "";
+      Portal.toast(`Issue #${row.id} tersimpan (Pending)${att}`);
       if (row.tanggal < st.start || row.tanggal > st.end) setPreset("today");
       await Promise.all([load(true), loadApps()]);
     } catch (err) {
@@ -263,7 +285,58 @@
       ${item("PIC", esc(r.pic))}
       ${item("Mulai / selesai", esc([r.waktu_mulai, r.tanggal_finish && fmtDate(r.tanggal_finish), r.waktu_selesai].filter(Boolean).join(" · ")))}
       ${r.sumber ? item("Sumber", `Impor spreadsheet (${esc(r.sumber)})`) : ""}
-    </dl>`;
+    </dl>${attView(r)}`;
+  }
+
+  const fmtSize = (b) => (b >= 1048576 ? `${(b / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(b / 1024))} KB`);
+  const ext = (name) => (String(name).split(".").pop() || "file").slice(0, 4);
+
+  // Lampiran di popup: gambar sebagai thumbnail (klik = buka ukuran penuh), file lain sebagai link unduh.
+  function attView(r) {
+    const att = r.lampiran || [];
+    if (!att.length) return "";
+    const imgs = att.filter((a) => a.gambar);
+    const files = att.filter((a) => !a.gambar);
+    return `<div class="att-view">
+      ${imgs.length ? `<h3>Gambar (${imgs.length})</h3><div class="att-grid">${imgs.map((a) =>
+        `<a href="${esc(a.url)}" target="_blank" rel="noopener" title="${esc(a.nama)}"><img src="${esc(a.url)}" alt="${esc(a.nama)}" loading="lazy"></a>`).join("")}</div>` : ""}
+      ${files.length ? `<h3>File (${files.length})</h3><div class="att-files">${files.map((a) =>
+        `<a class="att-item" href="${esc(a.url)}" download="${esc(a.nama)}" title="Unduh ${esc(a.nama)}"><span class="file-ico">${esc(ext(a.nama))}</span>
+          <span><span class="att-name">${esc(a.nama)}</span><br><span class="att-size">${fmtSize(a.ukuran)}</span></span></a>`).join("")}</div>` : ""}
+    </div>`;
+  }
+
+  // ---------- polisi: lampiran sebelum disimpan ----------
+  const MAX_FILES = 10;
+  const MAX_BYTES = 10 * 1024 * 1024;
+  const OK_EXT = ["jpg", "jpeg", "png", "gif", "webp", "bmp", "pdf", "doc", "docx", "xls", "xlsx", "csv", "ppt", "pptx", "txt", "log", "zip", "rar", "7z"];
+  let newFiles = [];
+
+  function addFiles(list) {
+    const errors = [];
+    for (let f of list) {
+      // Screenshot yang ditempel bernama "image.png": beri nama yang lebih jelas.
+      if (/^image\.(png|jpe?g|gif|webp)$/i.test(f.name)) {
+        const d = new Date();
+        f = new File([f], `screenshot-${isoDate(d)}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}.${f.name.split(".").pop()}`, { type: f.type });
+      }
+      const e = f.name.split(".").pop().toLowerCase();
+      if (!OK_EXT.includes(e)) { errors.push(`${f.name}: jenis file tidak didukung`); continue; }
+      if (f.size > MAX_BYTES) { errors.push(`${f.name}: lebih dari 10 MB`); continue; }
+      if (newFiles.length >= MAX_FILES) { errors.push(`Maksimal ${MAX_FILES} lampiran`); break; }
+      newFiles.push(f);
+    }
+    renderNewFiles();
+    if (errors.length) Portal.toast(errors.join(" · "), true);
+  }
+
+  function renderNewFiles() {
+    $$("#att-new img").forEach((img) => URL.revokeObjectURL(img.src));
+    $("#att-new").innerHTML = newFiles.map((f, i) => {
+      const thumb = f.type.startsWith("image/") ? `<img src="${URL.createObjectURL(f)}" alt="">` : `<span class="file-ico">${esc(ext(f.name))}</span>`;
+      return `<div class="att-item">${thumb}<span><span class="att-name" title="${esc(f.name)}">${esc(f.name)}</span><br>
+        <span class="att-size">${fmtSize(f.size)}</span></span><button type="button" class="att-del" data-i="${i}" aria-label="Hapus ${esc(f.name)}">×</button></div>`;
+    }).join("");
   }
 
   function openProgress(r) {
@@ -354,11 +427,32 @@
       renderAll();
     }));
 
+    // Klik tombol atau di mana saja pada baris: engineer -> popup tindak lanjut, polisi -> detail.
     $("#rows").addEventListener("click", (e) => {
+      if (e.target.closest("a") || window.getSelection().toString()) return;  // jangan ganggu link / seleksi teks
       const b = e.target.closest("[data-act]");
-      if (!b) return;
-      const r = st.byId.get(Number(b.dataset.id));
-      if (r) (b.dataset.act === "progress" ? openProgress : openDetail)(r);
+      const tr = e.target.closest("tr[data-id]");
+      const r = st.byId.get(Number((b || tr)?.dataset.id));
+      if (!r) return;
+      const act = b ? b.dataset.act : (st.role === "engineer" ? "progress" : "detail");
+      (act === "progress" ? openProgress : openDetail)(r);
+    });
+
+    // Lampiran: pilih file, tarik-lepas, atau tempel (Ctrl+V) di popup catat issue.
+    const input = $("#file-input");
+    $("#pick-files").addEventListener("click", () => input.click());
+    input.addEventListener("change", () => { addFiles(input.files); input.value = ""; });
+    const dz = $("#dropzone");
+    ["dragenter", "dragover"].forEach((t) => $("#m-new").addEventListener(t, (e) => { e.preventDefault(); dz.classList.add("over"); }));
+    ["dragleave", "drop"].forEach((t) => $("#m-new").addEventListener(t, (e) => { e.preventDefault(); dz.classList.remove("over"); }));
+    $("#m-new").addEventListener("drop", (e) => { if (e.dataTransfer?.files.length) addFiles(e.dataTransfer.files); });
+    $("#m-new").addEventListener("paste", (e) => {
+      const files = [...(e.clipboardData?.files || [])];
+      if (files.length) { e.preventDefault(); addFiles(files); }  // teks biasa tetap ditempel ke kolom seperti biasa
+    });
+    $("#att-new").addEventListener("click", (e) => {
+      const del = e.target.closest(".att-del");
+      if (del) { newFiles.splice(Number(del.dataset.i), 1); renderNewFiles(); }
     });
     $("#btn-new").addEventListener("click", openNew);
     $("#detail-to-progress").addEventListener("click", () => { closeModal($("#m-detail")); openProgress(st.current); });

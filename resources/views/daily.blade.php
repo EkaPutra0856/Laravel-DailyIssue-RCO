@@ -103,6 +103,16 @@
     <div class="modal-h"><h2 id="m-new-t">Catat Issue Baru</h2><button type="button" class="x" data-close aria-label="Tutup">×</button></div>
     <div class="modal-b grid2">
       <label class="field span2">Issue<textarea name="issue" rows="4" required maxlength="5000" placeholder="Tempel/tulis isi laporan"></textarea></label>
+      <div class="field span2">
+        <span>Lampiran gambar / file <span class="hint">opsional · maks 10 file, 10 MB per file</span></span>
+        <div class="dropzone" id="dropzone">
+          <input type="file" id="file-input" multiple hidden
+                 accept="image/jpeg,image/png,image/gif,image/webp,image/bmp,.pdf,.doc,.docx,.xls,.xlsx,.csv,.ppt,.pptx,.txt,.log,.zip,.rar,.7z">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 11-8.5 8.5a5 5 0 0 1-7-7L14 4a3.5 3.5 0 0 1 5 5l-8.5 8.5a2 2 0 0 1-3-3L15 7"/></svg>
+          <span>Tarik file ke sini, <button type="button" class="link" id="pick-files">pilih file</button>, atau tempel screenshot (Ctrl+V)</span>
+        </div>
+        <div class="att-list" id="att-new"></div>
+      </div>
       <label class="field">Aplikasi
         <input name="aplikasi" list="apps" required maxlength="150" autocomplete="off" placeholder="mis. Rekon ATM">
         <span class="hint" id="app-hint"></span>
@@ -116,10 +126,7 @@
       </label>
       <label class="field">Pelapor<input name="pelapor" required maxlength="150" placeholder="Nama / nomor pelapor"></label>
       <label class="field">Media Laporan
-        <select name="media_laporan" required>
-          <option value="">Pilih media</option>
-          @foreach ($media as $m)<option>{{ $m }}</option>@endforeach
-        </select>
+        <input name="media_laporan" list="media" required maxlength="100" data-default="{{ $mediaDefault }}" placeholder="WhatsApp, Email, ... (boleh diketik)">
       </label>
       <label class="field">Penerima Laporan<input name="penerima_laporan" list="penerima" required maxlength="150" placeholder="Nama group / RCO Official / nama sendiri"></label>
       <label class="field">Pencatat Issue<input name="pencatat_issue" required maxlength="100"></label>
@@ -166,6 +173,7 @@
 
 <datalist id="apps"></datalist>
 <datalist id="penerima"><option>RCO Official</option></datalist>
+<datalist id="media">@foreach ($media as $m)<option>{{ $m }}</option>@endforeach</datalist>
 @endsection
 
 @section('scripts')

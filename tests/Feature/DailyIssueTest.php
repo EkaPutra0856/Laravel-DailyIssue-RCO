@@ -9,6 +9,8 @@ use App\Handover\Report;
 use App\Models\Aplikasi;
 use App\Models\DailyIssue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class DailyIssueTest extends TestCase
@@ -124,6 +126,50 @@ class DailyIssueTest extends TestCase
         $by = array_column($this->getJson('/api/issues?start=2026-11-05&end=2026-11-05')->json('issues'), null, 'issue_no');
         $this->assertSame('done', $by[$c['id']]['category']);
         $this->assertStringEndsWith("/?issue={$b['id']}", $by[$b['id']]['link']);
+    }
+
+    public function test_polisi_uploads_images_and_files(): void
+    {
+        Storage::fake('local');
+        $res = $this->post('/api/daily/issues', [...self::NEW, 'lampiran' => [
+            UploadedFile::fake()->image('screenshot.png', 400, 300),
+            UploadedFile::fake()->create('rekon.xlsx', 120, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'),
+        ]], ['X-Requested-With' => 'XMLHttpRequest', 'Accept' => 'application/json'])->assertCreated();
+
+        $att = $res->json('lampiran');
+        $this->assertSame(['screenshot.png', 'rekon.xlsx'], array_column($att, 'nama'));
+        $this->assertSame([true, false], array_column($att, 'gambar'));
+        $this->assertSame('pending', $res->json('status'));
+        $this->assertCount(2, Storage::disk('local')->allFiles('lampiran'));
+
+        // Daftar issue ikut membawa lampiran (untuk penanda di tabel & popup engineer)
+        $list = $this->getJson('/api/daily/issues?start=2026-11-05&end=2026-11-05')->json('issues.0.lampiran');
+        $this->assertCount(2, $list);
+
+        // Gambar tampil langsung, file lain selalu diunduh
+        $img = $this->get("/api/daily/lampiran/{$att[0]['id']}")->assertOk();
+        $this->assertStringStartsWith('inline', $img->headers->get('Content-Disposition'));
+        $this->assertSame('image/png', $img->headers->get('Content-Type'));
+        $file = $this->get("/api/daily/lampiran/{$att[1]['id']}")->assertOk();
+        $this->assertStringStartsWith('attachment', $file->headers->get('Content-Disposition'));
+        $this->assertSame('application/octet-stream', $file->headers->get('Content-Type'));
+        $this->get('/api/daily/lampiran/999')->assertNotFound();
+    }
+
+    public function test_upload_rules(): void
+    {
+        Storage::fake('local');
+        $headers = ['X-Requested-With' => 'XMLHttpRequest', 'Accept' => 'application/json'];
+        $this->post('/api/daily/issues', [...self::NEW, 'lampiran' => [UploadedFile::fake()->create('virus.exe', 10)]], $headers)
+            ->assertStatus(422)->assertJsonPath('error', 'Jenis file lampiran tidak didukung (gambar, PDF, Word/Excel/PowerPoint, TXT/CSV, ZIP).');
+        $this->post('/api/daily/issues', [...self::NEW, 'lampiran' => [UploadedFile::fake()->image('besar.jpg')->size(11000)]], $headers)
+            ->assertStatus(422)->assertJsonPath('error', 'Ukuran tiap lampiran maksimal 10 MB.');
+        $this->post('/api/daily/issues', [...self::NEW, 'lampiran' => array_map(fn ($i) => UploadedFile::fake()->image("{$i}.png"), range(1, 11))], $headers)
+            ->assertStatus(422)->assertJsonPath('error', 'Maksimal 10 lampiran per issue.');
+        // Form lintas situs (tanpa header X-Requested-With) ditolak
+        $this->post('/api/daily/issues', [...self::NEW, 'lampiran' => [UploadedFile::fake()->image('a.png')]])->assertStatus(415);
+        $this->assertDatabaseCount('daily_issues', 0);
+        $this->assertSame([], Storage::disk('local')->allFiles());
     }
 
     public function test_show_single_issue(): void

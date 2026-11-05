@@ -8,20 +8,22 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * POST wajib application/json: form lintas situs tidak bisa mengirim JSON tanpa izin CORS,
- * jadi ini menutup celah CSRF tanpa token (API tidak memakai sesi).
+ * POST/PUT wajib application/json, atau (untuk unggah lampiran) membawa header X-Requested-With.
+ * Form lintas situs tidak bisa mengirim JSON atau header custom tanpa izin CORS, jadi ini menutup celah CSRF
+ * tanpa token (API tidak memakai sesi).
  */
 class RequireJson
 {
-    private const MAX_BODY = 2_000_000;
+    private const MAX_JSON = 2_000_000;
 
     public function handle(Request $request, Closure $next): Response
     {
         if (in_array($request->method(), ['POST', 'PUT', 'PATCH', 'DELETE'], true)) {
-            if (! str_starts_with((string) $request->header('Content-Type'), 'application/json')) {
+            $json = str_starts_with((string) $request->header('Content-Type'), 'application/json');
+            if (! $json && $request->header('X-Requested-With') !== 'XMLHttpRequest') {
                 throw new WebError('Content-Type harus application/json', 415);
             }
-            if ((int) $request->header('Content-Length') > self::MAX_BODY) {
+            if ($json && (int) $request->header('Content-Length') > self::MAX_JSON) {
                 throw new WebError('Request terlalu besar', 413);
             }
         }

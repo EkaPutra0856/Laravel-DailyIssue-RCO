@@ -12,7 +12,7 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class SecurityHeaders
 {
-    private const CSP = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
+    private const CSP = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; "
         ."connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors";
 
     public function handle(Request $request, Closure $next): Response

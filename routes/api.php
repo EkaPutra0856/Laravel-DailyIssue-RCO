@@ -20,4 +20,5 @@ Route::middleware([WebPassword::class, RequireJson::class])->group(function () {
     Route::get('/daily/issues/{id}', [DailyIssueController::class, 'show'])->whereNumber('id');
     Route::put('/daily/issues/{id}/tindak-lanjut', [DailyIssueController::class, 'tindakLanjut'])->whereNumber('id');
     Route::get('/daily/aplikasi', [DailyIssueController::class, 'aplikasi']);
+    Route::get('/daily/lampiran/{id}', [DailyIssueController::class, 'lampiran'])->whereNumber('id');
 });
