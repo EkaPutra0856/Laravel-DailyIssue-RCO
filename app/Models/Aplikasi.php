@@ -11,10 +11,21 @@ class Aplikasi extends Model
 
     protected $fillable = ['nama', 'team', 'jumlah_issue'];
 
+    private static function rapikan(string $nama): string
+    {
+        return trim(preg_replace('/\s+/u', ' ', $nama));
+    }
+
+    /** Ejaan nama yang sudah terdaftar supaya konsisten (mis. "rekon atm" -> "Rekon ATM"). */
+    public static function ejaanResmi(string $nama): string
+    {
+        return self::findByNama($nama)?->nama ?? self::rapikan($nama);
+    }
+
     /** Cari aplikasi tanpa peduli huruf besar/kecil & spasi berlebih. */
     public static function findByNama(string $nama): ?self
     {
-        $key = mb_strtolower(trim(preg_replace('/\s+/u', ' ', $nama)));
+        $key = mb_strtolower(self::rapikan($nama));
 
         return $key === '' ? null : self::query()->whereRaw('LOWER(nama) = ?', [$key])->first();
     }
@@ -25,7 +36,7 @@ class Aplikasi extends Model
      */
     public static function catat(string $nama, string $team): void
     {
-        $nama = trim(preg_replace('/\s+/u', ' ', $nama));
+        $nama = self::rapikan($nama);
         if ($nama === '') {
             return;
         }

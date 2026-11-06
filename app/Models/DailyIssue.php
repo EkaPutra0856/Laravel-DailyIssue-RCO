@@ -5,6 +5,8 @@ namespace App\Models;
 use App\Handover\Category;
 use App\Handover\Dates;
 use App\Handover\Issue;
+use Carbon\CarbonInterface;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -51,7 +53,44 @@ class DailyIssue extends Model
         });
     }
 
-    private static function hhmm(?string $time): ?string
+    // ---------- relasi ----------
+
+    public function lampiran(): HasMany
+    {
+        return $this->hasMany(Lampiran::class)->orderBy('id');
+    }
+
+    // ---------- filter query ----------
+
+    public function scopePeriode(Builder $query, CarbonInterface $awal, CarbonInterface $akhir): void
+    {
+        $query->whereBetween('tanggal', [$awal->toDateString(), $akhir->toDateString()]);
+    }
+
+    public function scopeTerbaru(Builder $query): void
+    {
+        $query->orderByDesc('tanggal')->orderByDesc('waktu_lapor')->orderByDesc('id');
+    }
+
+    public function scopeFollowUpAktif(Builder $query): void
+    {
+        $query->where('follow_up', true)->where('status', '!=', 'done');
+    }
+
+    // ---------- aksi ----------
+
+    /** Soft delete sambil mencatat siapa yang menghapus. */
+    public function hapusOleh(string $nama): void
+    {
+        $this->dihapus_oleh = mb_substr(trim($nama), 0, 100) ?: null;
+        $this->save();
+        $this->delete();
+    }
+
+    // ---------- bentuk data ----------
+
+    /** "09:00:00" -> "09:00". */
+    public static function hhmm(?string $time): ?string
     {
         return $time ? substr($time, 0, 5) : null;
     }
@@ -85,11 +124,6 @@ class DailyIssue extends Model
             'updated_at' => $this->updated_at?->toIso8601String(),
             'lampiran' => $this->lampiran->map(fn (Lampiran $l) => $l->toRow())->all(),
         ];
-    }
-
-    public function lampiran(): HasMany
-    {
-        return $this->hasMany(Lampiran::class)->orderBy('id');
     }
 
     /** Ubah ke Issue rekap (dipakai dashboard rekap & bot). Trouble dihitung on progress dengan tanda khusus. */

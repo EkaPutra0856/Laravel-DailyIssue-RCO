@@ -10,7 +10,7 @@ use Symfony\Component\HttpFoundation\Response;
 /**
  * POST/PUT wajib application/json, atau (untuk unggah lampiran) membawa header X-Requested-With.
  * Form lintas situs tidak bisa mengirim JSON atau header custom tanpa izin CORS, jadi ini menutup celah CSRF
- * tanpa token (API tidak memakai sesi).
+ * tanpa token.
  */
 class RequireJson
 {

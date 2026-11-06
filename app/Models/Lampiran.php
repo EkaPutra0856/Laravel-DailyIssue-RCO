@@ -12,6 +12,10 @@ class Lampiran extends Model
 
     protected $fillable = ['daily_issue_id', 'nama', 'path', 'mime', 'ukuran'];
 
+    public const MAKS_PER_ISSUE = 10;
+    public const MAKS_KB = 10240;  // 10 MB per file
+    public const EKSTENSI = 'jpg,jpeg,png,gif,webp,bmp,pdf,doc,docx,xls,xlsx,csv,ppt,pptx,txt,log,zip,rar,7z';
+
     // Gambar yang aman ditampilkan langsung di browser (SVG tidak, karena bisa berisi script).
     public const GAMBAR = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/bmp'];
 

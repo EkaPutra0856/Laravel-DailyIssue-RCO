@@ -18,11 +18,6 @@ class HandoverController extends Controller
 {
     public function __construct(private HandoverWeb $web) {}
 
-    private static function json(mixed $data, int $status = 200): JsonResponse
-    {
-        return response()->json($data, $status, ['Cache-Control' => 'no-store'], JSON_UNESCAPED_UNICODE);
-    }
-
     public function healthz(): JsonResponse
     {
         return self::json(['ok' => true]);
