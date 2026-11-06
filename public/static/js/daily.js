@@ -1268,9 +1268,16 @@
         let now = 0;
         let paused = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
         const show = (i) => {
-            now = i;
-            slides.forEach((el, n) => el.classList.toggle("on", n === i));
+            if (i === now) return;
+            // Slide yang baru keluar kembali dulu ke kanan, supaya selalu masuk dari kanan.
+            slides[i].classList.remove("out");
+            void slides[i].offsetWidth;
+            slides.forEach((el, n) => {
+                el.classList.toggle("out", n === now);
+                el.classList.toggle("on", n === i);
+            });
             dots.forEach((el, n) => el.classList.toggle("on", n === i));
+            now = i;
         };
         dots.forEach((el, i) => el.addEventListener("click", () => show(i)));
         const auto = paused;
