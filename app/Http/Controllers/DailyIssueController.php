@@ -120,6 +120,35 @@ class DailyIssueController extends Controller
         return $issue ? self::json($issue->toRow()) : self::json(['error' => "Issue #{$id} tidak ditemukan"], 404);
     }
 
+    public function followUps(): JsonResponse
+    {
+        $issues = DailyIssue::query()->where('follow_up', true)->where('status', '!=', 'done')
+            ->orderByDesc('tanggal')->orderByDesc('waktu_lapor')->orderByDesc('id')
+            ->with('lampiran')->get();
+
+        return self::json($issues->map(fn (DailyIssue $issue) => $issue->toRow())->all());
+    }
+
+    public function setFollowUp(Request $request, int $id): JsonResponse
+    {
+        $issue = DailyIssue::find($id);
+        if (! $issue) {
+            return self::json(['error' => "Issue #{$id} tidak ditemukan"], 404);
+        }
+
+        $data = self::validate(self::body($request), ['follow_up' => 'required|boolean']);
+        if ($data instanceof JsonResponse) {
+            return $data;
+        }
+        if ($data['follow_up'] && $issue->status === 'done') {
+            return self::json(['error' => 'Issue berstatus Done tidak dapat ditambahkan ke follow-up.'], 422);
+        }
+
+        $issue->update(['follow_up' => $data['follow_up']]);
+
+        return self::json($issue->fresh()->load('lampiran')->toRow());
+    }
+
     /** Polisi mencatat issue baru (boleh dengan lampiran). Status selalu pending; bagian engineer kosong. */
     public function store(Request $request): JsonResponse
     {
@@ -331,6 +360,7 @@ class DailyIssueController extends Controller
         }
         $issue->update([
             'status' => $data['status'],
+            'follow_up' => $data['status'] === 'done' ? false : $issue->follow_up,
             'pic' => $data['pic'],
             'waktu_mulai' => ($data['waktu_mulai'] ?? null) ?: null,
             'tanggal_finish' => ($data['tanggal_finish'] ?? null) ?: null,

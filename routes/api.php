@@ -15,8 +15,10 @@ Route::middleware([WebPassword::class, RequireJson::class])->group(function () {
 
     // Daily Issue (input polisi & tindak lanjut engineer)
     Route::get('/daily/issues', [DailyIssueController::class, 'index']);
+    Route::get('/daily/follow-ups', [DailyIssueController::class, 'followUps']);
     Route::post('/daily/issues', [DailyIssueController::class, 'store']);
     Route::get('/daily/issues/{id}', [DailyIssueController::class, 'show'])->whereNumber('id');
+    Route::put('/daily/issues/{id}/follow-up', [DailyIssueController::class, 'setFollowUp'])->whereNumber('id');
     // POST (bukan PUT) supaya bisa membawa lampiran: PHP tidak membaca multipart pada PUT.
     Route::post('/daily/issues/{id}', [DailyIssueController::class, 'update'])->whereNumber('id');
     Route::delete('/daily/issues/{id}', [DailyIssueController::class, 'destroy'])->whereNumber('id');

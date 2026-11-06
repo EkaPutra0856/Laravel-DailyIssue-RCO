@@ -16,7 +16,7 @@
     role: "polisi", nama: "",
     preset: "today", start: "", end: "",
     teams: new Set(TEAMS), q: "", hidden: new Set(),   // tim yang dipilih; status yang disembunyikan
-    rows: [], byId: new Map(), apps: new Map(),
+    rows: [], followUps: [], byId: new Map(), apps: new Map(),
     loading: false, error: "", fetchedAt: null, current: null,
   };
 
@@ -126,6 +126,7 @@
       st.fetchedAt = new Date(data.fetched_at);
       st.error = "";
       renderAll(quiet ? before : null);
+      await loadFollowUps();
     } catch (e) {
       if (id !== reqId) return;
       if (!quiet) st.error = e.message;
@@ -140,6 +141,15 @@
       st.apps = new Map(apps.map((a) => [normApp(a.nama), a]));
       $("#apps").innerHTML = apps.map((a) => `<option value="${esc(a.nama)}">${esc(a.team)}</option>`).join("");
     } catch (e) { /* rekomendasi tidak wajib */ }
+  }
+
+  async function loadFollowUps() {
+    try {
+      st.followUps = await api("api/daily/follow-ups");
+      renderFollowUps();
+    } catch (e) {
+      if (st.role === "polisi") Portal.toast(`Gagal memuat follow-up: ${e.message}`, true);
+    }
   }
 
   // ---------- render ----------
@@ -203,6 +213,44 @@
     const empty = $("#empty");
     empty.hidden = rows.length > 0 || st.loading;
     empty.textContent = st.rows.length ? "Tidak ada issue yang cocok dengan filter." : "Belum ada issue di periode ini.";
+  }
+
+  function renderFollowUps() {
+    const rows = st.followUps.filter((r) => r.follow_up && r.status !== "done");
+    $("#follow-up-count").textContent = `${rows.length} issue`;
+    $("#follow-up-list").innerHTML = rows.map((r) => `<button type="button" class="follow-up-item" data-follow-up-id="${r.id}" aria-label="Buka ${esc(issueLabel(r))}">
+      <span class="follow-up-meta"><b>${esc(issueLabel(r))}</b><span class="team-tag">${esc(r.team)}</span><span class="badge ${r.status}">${esc(STATUS[r.status] || r.status)}</span><span class="muted">${fmtDate(r.tanggal)}</span></span>
+      <strong class="follow-up-app">${esc(r.aplikasi) || "Tanpa aplikasi"}</strong>
+      <span class="follow-up-text">${esc(r.issue)}</span>
+    </button>`).join("");
+    $("#follow-up-empty").hidden = rows.length > 0;
+  }
+
+  async function toggleFollowUp() {
+    const btn = $("#detail-to-follow-up");
+    const issue = st.current;
+    btn.disabled = true;
+    try {
+      const row = await api(`api/daily/issues/${issue.id}/follow-up`, "PUT", { follow_up: !issue.follow_up });
+      st.current = row;
+      st.byId.set(row.id, row);
+      st.rows = st.rows.map((item) => item.id === row.id ? row : item);
+      st.followUps = st.followUps.filter((item) => item.id !== row.id);
+      if (row.follow_up && row.status !== "done") st.followUps.unshift(row);
+      renderAll();
+      renderFollowUps();
+      updateFollowUpButton(row);
+      Portal.toast(row.follow_up ? `${issueLabel(row)} masuk ke Follow-up` : `${issueLabel(row)} dihapus dari Follow-up`);
+    } catch (e) {
+      Portal.toast(e.message, true);
+    } finally { btn.disabled = false; }
+  }
+
+  function updateFollowUpButton(r) {
+    const btn = $("#detail-to-follow-up");
+    btn.hidden = r.status === "done";
+    btn.textContent = r.follow_up ? "Hapus Follow-up" : "Tambah Follow-up";
+    btn.setAttribute("aria-pressed", String(Boolean(r.follow_up)));
   }
 
   function renderSync() {
@@ -524,6 +572,7 @@
     st.current = r;
     $("#m-detail-t").textContent = `Detail ${issueLabel(r)}`;
     $("#detail-body").outerHTML = `<div id="detail-body">${summaryHtml(r)}</div>`;
+    updateFollowUpButton(r);
     openModal("#m-detail");
   }
 
@@ -695,9 +744,16 @@
     $("#tg-confirm-yes").addEventListener("click", tgSend);
     $("#edit-delete").addEventListener("click", () => openDelete(editing));
     $("#detail-to-delete").addEventListener("click", () => openDelete(st.current));
+    $("#detail-to-follow-up").addEventListener("click", toggleFollowUp);
     $("#delete-yes").addEventListener("click", confirmDelete);
     $("#detail-to-progress").addEventListener("click", () => { closeModal($("#m-detail")); openProgress(st.current); });
     $("#detail-to-edit").addEventListener("click", () => { closeModal($("#m-detail")); openEdit(st.current); });
+    $("#follow-up-list").addEventListener("click", (e) => {
+      const item = e.target.closest("[data-follow-up-id]");
+      if (!item) return;
+      const issue = st.followUps.find((row) => row.id === Number(item.dataset.followUpId));
+      if (issue) st.role === "engineer" ? openProgress(issue) : openDetail(issue);
+    });
 
     fNew.addEventListener("submit", submitNew);
     fNew.elements.aplikasi.addEventListener("input", onAppInput);

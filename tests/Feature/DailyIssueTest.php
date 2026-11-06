@@ -91,6 +91,20 @@ class DailyIssueTest extends TestCase
         $this->putJson('/api/daily/issues/999/tindak-lanjut', ['status' => 'done', 'pic' => 'X'])->assertNotFound();
     }
 
+    public function test_polisi_can_follow_up_issue_until_it_is_done(): void
+    {
+        $row = $this->create();
+        $url = "/api/daily/issues/{$row['id']}/follow-up";
+
+        $this->getJson('/api/daily/follow-ups')->assertOk()->assertExactJson([]);
+        $this->putJson($url, ['follow_up' => true])->assertOk()->assertJsonPath('follow_up', true);
+        $this->getJson('/api/daily/follow-ups')->assertOk()->assertJsonCount(1)->assertJsonPath('0.id', $row['id']);
+
+        $this->putJson("/api/daily/issues/{$row['id']}/tindak-lanjut", ['status' => 'done', 'pic' => 'Hendrik'])
+            ->assertOk()->assertJsonPath('follow_up', false);
+        $this->getJson('/api/daily/follow-ups')->assertOk()->assertExactJson([]);
+    }
+
     public function test_aplikasi_team_recommendation_and_consistency(): void
     {
         $this->create();
