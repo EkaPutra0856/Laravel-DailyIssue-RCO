@@ -298,4 +298,17 @@ body:not(.role-polisi) [data-only="polisi"], body:not(.role-engineer) [data-only
   .follow-up-item { grid-template-columns: minmax(0, 1fr); gap: 3px; }
   .follow-up-meta { flex-wrap: wrap; }
 }
-@media (prefers-reduced-motion: reduce) { .spin, tbody tr.flash { animation: none; } }
+/* Kata semangat di bawah panel Per Tim: mengisi sisa tinggi panel */
+.side-panel { display: flex; flex-direction: column; }
+.spirit { flex: 1 1 auto; display: flex; flex-direction: column; gap: 12px; min-height: 190px; margin: 0 14px 14px; padding: 16px; border-radius: 12px; color: #fff; background: linear-gradient(145deg, var(--navy), var(--blue)); }
+.spirit-head { display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 650; color: #dbe6ff; }
+.spirit-slides { flex: 1 1 auto; display: grid; align-items: center; }
+.spirit-slide { grid-area: 1 / 1; margin: 0; font-size: 17px; line-height: 1.4; font-weight: 700; opacity: 0; visibility: hidden; transform: translateY(6px); transition: opacity .45s ease, transform .45s ease, visibility .45s; }
+.spirit-slide.on { opacity: 1; visibility: visible; transform: none; }
+.spirit-dots { display: flex; gap: 2px; margin-left: -6px; }
+.spirit-dots button { width: 20px; height: 20px; padding: 0; border: 0; background: none; cursor: pointer; display: grid; place-items: center; border-radius: 50%; }
+.spirit-dots button::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: rgba(255, 255, 255, .45); transition: background .2s, transform .2s; }
+.spirit-dots button:hover::before { background: rgba(255, 255, 255, .8); }
+.spirit-dots button.on::before { background: #fff; transform: scale(1.2); }
+.spirit-dots button:focus-visible { outline: 2px solid #fff; outline-offset: -2px; }
+@media (prefers-reduced-motion: reduce) { .spin, tbody tr.flash { animation: none; } .spirit-slide { transition: none; transform: none; } }

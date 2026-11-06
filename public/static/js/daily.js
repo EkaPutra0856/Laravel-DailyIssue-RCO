@@ -1259,8 +1259,34 @@
         });
     }
 
+    // Kata semangat di panel Per Tim: berganti otomatis, berhenti saat disorot atau dipilih lewat keyboard.
+    function bindSpirit() {
+        const box = $("#spirit");
+        const slides = $$(".spirit-slide", box);
+        const dots = $$(".spirit-dots button", box);
+        if (slides.length < 2) return;
+        let now = 0;
+        let paused = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        const show = (i) => {
+            now = i;
+            slides.forEach((el, n) => el.classList.toggle("on", n === i));
+            dots.forEach((el, n) => el.classList.toggle("on", n === i));
+        };
+        dots.forEach((el, i) => el.addEventListener("click", () => show(i)));
+        const auto = paused;
+        const pause = (v) => () => { paused = auto || v; };
+        box.addEventListener("mouseenter", pause(true));
+        box.addEventListener("mouseleave", pause(false));
+        box.addEventListener("focusin", pause(true));
+        box.addEventListener("focusout", pause(false));
+        setInterval(() => {
+            if (!paused && !document.hidden) show((now + 1) % slides.length);
+        }, 7000);
+    }
+
     async function init() {
         bind();
+        bindSpirit();
         loadRole();
         setPreset("today");
         await Promise.all([load(), loadApps()]);
