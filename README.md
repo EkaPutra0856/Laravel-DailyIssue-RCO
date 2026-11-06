@@ -31,18 +31,15 @@ cukup.
    cd Handover-RCO-Laravel
    composer install
    ```
-
 2. Buat `.env` dan app key:
 
    ```powershell
    Copy-Item .env.example .env
    php artisan key:generate
    ```
-
 3. Isi bagian **Handover RCO** di `.env`: minimal `TELEGRAM_BOT_TOKEN`, `APPS_SCRIPT_URL`, dan `APPS_SCRIPT_KEY`.
    Nilainya sama dengan `.env` versi Python. `.env` berisi token dan key, jadi **tidak ikut ke Git** dan jangan
    dikirim ke grup.
-
 4. Siapkan database MySQL (Laragon: klik **Start All**; XAMPP: Start MySQL), lalu buat database dan tabelnya:
 
    ```powershell
@@ -51,7 +48,6 @@ cukup.
    ```
 
    Koneksi diatur di `.env` (`DB_HOST=127.0.0.1`, `DB_DATABASE=handover_rco`, `DB_USERNAME=root`).
-
 5. Salin issue lama dari spreadsheet (sekali saja; default 3 bulan terakhir, sheet asli hanya dibaca):
 
    ```powershell
@@ -61,7 +57,6 @@ cukup.
 
    Aman dijalankan ulang: baris yang sudah diimpor dilewati, isian engineer dari web tidak tertimpa
    (kecuali pakai `--timpa`). Perintah ini juga mengisi daftar Aplikasi -> Team untuk rekomendasi.
-
 6. Cek instalasi (tes memakai database sementara di memori, tidak butuh MySQL/Google/Telegram):
 
    ```powershell
@@ -150,7 +145,6 @@ pemeriksaan ini mati (untuk pengembangan lokal), jadi **wajib diisi di server**.
    DAILY_ISSUE_URL=http://172.18.66.243:8091
    DAILY_ISSUE_SSO_SECRET=<kunci>
    ```
-
 2. Tambahkan satu route di `routes/web.php` portal, lalu arahkan menu Daily Issue ke `/daily-issue`.
    Sesuaikan `username` dan `name` dengan kolom tabel user portal. Setelah `php artisan config:cache`, `env()` di
    luar folder config bernilai kosong, jadi kalau portal memakainya pindahkan kedua nilai itu ke `config/services.php`.
@@ -184,13 +178,13 @@ Sheet asli **hanya dibaca**:
 
 ## Fitur
 
-| Perintah | Isi |
-|---|---|
-| `/rekap [periode]` | Pending + on progress |
-| `/pending`, `/progress`, `/done` | Satu kategori saja |
-| `/doneprogress` | Done dan on progress, 2 bubble chat |
-| `/rekapdetail` | Rekap + nama aplikasi |
-| `/help`, `/id` | Panduan, chat id |
+| Perintah                               | Isi                                 |
+| -------------------------------------- | ----------------------------------- |
+| `/rekap [periode]`                   | Pending + on progress               |
+| `/pending`, `/progress`, `/done` | Satu kategori saja                  |
+| `/doneprogress`                      | Done dan on progress, 2 bubble chat |
+| `/rekapdetail`                       | Rekap + nama aplikasi               |
+| `/help`, `/id`                     | Panduan, chat id                    |
 
 Periode: kosong (hari ini), `kemarin`, `minggu ini`, `bulan ini`, `bulan lalu`, `Oktober 2026`, `13/10/2026`,
 `5-7 Oktober 2026`, `28 September 2026 : 2 Oktober 2026`, `September : November 2026`. Tambahan: `detail`,
@@ -201,20 +195,20 @@ pengambilan data di header tabel, export CSV, dan Export ke Chat (dengan pratinj
 
 ## Konfigurasi `.env`
 
-| Variabel | Default | Keterangan |
-|---|---|---|
-| `TELEGRAM_BOT_TOKEN` | – | wajib untuk bot dan Export ke Chat |
-| `APPS_SCRIPT_URL` | – | URL Web App `/exec` |
-| `APPS_SCRIPT_KEY` | – | sama dengan `SECRET_KEY` di Apps Script |
-| `SPREADSHEET_ID` | ID sheet asli | untuk link |
-| `ALLOWED_CHAT_IDS` | kosong (semua) | chat yang boleh memakai bot, pisahkan koma |
-| `REPORT_TITLE` | `Handover Polisi – Team RCO` | pakai tanda kutip |
-| `HANDOVER_TIMEZONE` | `Asia/Jakarta` | untuk "hari ini" |
-| `WEB_PASSWORD` | kosong | login browser (username bebas). **Wajib** kalau web dibuka dari jaringan |
-| `PORTAL_SSO_SECRET` | kosong | kunci bersama dengan portal. Kosong = siapa pun bisa membuka. **Wajib** di server |
-| `WEB_CHAT_ID` | chat pertama `ALLOWED_CHAT_IDS` | tujuan Export ke Chat |
-| `WEB_LINK_TARGET` | `asli` | link baris: `asli` (butuh akses) atau `transit` (cermin publik) |
-| `TRANSIT_SPREADSHEET_ID` | ID transit | dipakai kalau `WEB_LINK_TARGET=transit` |
+| Variabel                   | Default                           | Keterangan                                                                              |
+| -------------------------- | --------------------------------- | --------------------------------------------------------------------------------------- |
+| `TELEGRAM_BOT_TOKEN`     | –                                | wajib untuk bot dan Export ke Chat                                                      |
+| `APPS_SCRIPT_URL`        | –                                | URL Web App `/exec`                                                                   |
+| `APPS_SCRIPT_KEY`        | –                                | sama dengan `SECRET_KEY` di Apps Script                                               |
+| `SPREADSHEET_ID`         | ID sheet asli                     | untuk link                                                                              |
+| `ALLOWED_CHAT_IDS`       | kosong (semua)                    | chat yang boleh memakai bot, pisahkan koma                                              |
+| `REPORT_TITLE`           | `Handover Polisi – Team RCO`   | pakai tanda kutip                                                                       |
+| `HANDOVER_TIMEZONE`      | `Asia/Jakarta`                  | untuk "hari ini"                                                                        |
+| `WEB_PASSWORD`           | kosong                            | login browser (username bebas). **Wajib** kalau web dibuka dari jaringan          |
+| `PORTAL_SSO_SECRET`      | kosong                            | kunci bersama dengan portal. Kosong = siapa pun bisa membuka. **Wajib** di server |
+| `WEB_CHAT_ID`            | chat pertama `ALLOWED_CHAT_IDS` | tujuan Export ke Chat                                                                   |
+| `WEB_LINK_TARGET`        | `asli`                          | link baris: `asli` (butuh akses) atau `transit` (cermin publik)                     |
+| `TRANSIT_SPREADSHEET_ID` | ID transit                        | dipakai kalau `WEB_LINK_TARGET=transit`                                               |
 
 ## Struktur kode
 
