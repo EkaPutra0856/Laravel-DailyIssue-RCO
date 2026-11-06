@@ -45,6 +45,15 @@
   @endforeach
 </div>
 
+<section class="card follow-up-panel" id="follow-up-panel" aria-labelledby="follow-up-title">
+  <div class="follow-up-head">
+    <h2 class="card-title" id="follow-up-title">Issue Follow-up</h2>
+    <span class="count" id="follow-up-count">0 issue</span>
+  </div>
+  <div class="follow-up-list" id="follow-up-list" aria-live="polite"></div>
+  <div class="follow-up-empty" id="follow-up-empty" hidden>Belum ada issue follow-up.</div>
+</section>
+
 <div class="section-label">Filter</div>
 <section class="card filters">
   <div class="f-row">
@@ -203,7 +212,7 @@
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="m-detail-t">
     <div class="modal-h"><h2 id="m-detail-t">Detail Issue</h2><button class="x" data-close aria-label="Tutup">×</button></div>
     <div class="modal-b"><div class="summary" id="detail-body"></div></div>
-    <div class="modal-f"><button class="btn danger" id="detail-to-delete" data-only="polisi">Hapus</button><span class="spacer"></span><button class="btn" data-close>Tutup</button><button class="btn outline" id="detail-to-edit" data-only="polisi">Edit Issue</button><button class="btn primary" id="detail-to-progress" data-only="engineer">Tindak Lanjut</button></div>
+    <div class="modal-f"><button class="btn danger" id="detail-to-delete" data-only="polisi">Hapus</button><span class="spacer"></span><button class="btn" data-close>Tutup</button><button class="btn outline" id="detail-to-follow-up" data-only="polisi" aria-pressed="false">Tambah Follow-up</button><button class="btn outline" id="detail-to-edit" data-only="polisi">Edit Issue</button><button class="btn primary" id="detail-to-progress" data-only="engineer">Tindak Lanjut</button></div>
   </div>
 </div>
 
