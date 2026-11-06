@@ -125,6 +125,7 @@
       'Satu issue selesai, satu rekan terbantu.',
       'Tenang, teliti, tuntaskan.',
       'Terima kasih sudah berjaga hari ini.',
+      'Pause before execute -APS 2026',
     ];
   @endphp
   <section class="spirit" id="spirit" aria-label="Kata semangat untuk rekan-rekan RCO">
