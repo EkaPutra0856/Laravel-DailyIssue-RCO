@@ -5,6 +5,7 @@
 
 @section('content')
 <div id="daily-config" hidden
+     data-portal-nama="{{ $portalNama }}"
      data-teams='@json($teams)'
      data-statuses='@json($statuses)'
      data-engineer-statuses='@json($engineerStatuses)'></div>

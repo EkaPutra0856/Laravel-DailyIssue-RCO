@@ -120,13 +120,59 @@ Default-nya bulan ini + bulan lalu. Di VS Code: **Terminal → Run Task → Ambi
 
 ## Daily Issue di web portal
 
-- Peran tanpa login (portal sudah login): pilih Polisi/Engineer + nama di pojok kanan atas, atau portal
-  mengirimnya lewat link: `/?role=engineer&nama=Hendrik`.
+- Siapa pun yang sudah login di portal boleh memakai fitur ini (lihat "Menyambungkan ke portal" di bawah).
+  Peran dipilih sendiri di pojok kanan atas (Polisi/Engineer), atau lewat link: `/?role=engineer`.
 - Ditampilkan di dalam portal (iframe): pakai `/?embed=1` supaya topbar & sidebar halaman ini disembunyikan.
   Alamat portal wajib dicantumkan di `PORTAL_ORIGIN` (contoh `http://172.18.66.243`); selain itu browser menolak
   menampilkan halaman ini di iframe. `PORTAL_URL` dipakai untuk menu **Home** di sidebar.
 - Buka issue tertentu langsung (popup terbuka): `/?issue=<id>`.
-- Catatan: tanpa login, peran hanya dibedakan di tampilan. Akses tetap dijaga oleh portal / `WEB_PASSWORD`.
+- Catatan: peran hanya dibedakan di tampilan, server tidak membedakan polisi dan engineer.
+
+### Menyambungkan ke portal
+
+Aplikasi ini terpisah dari portal, jadi portal perlu "mengantar" penggunanya lewat link bertanda tangan. Link
+berlaku 5 menit paling lama, dan sesi di sini berlaku sesuai `SESSION_LIFETIME`. Selama `PORTAL_SSO_SECRET` kosong,
+pemeriksaan ini mati (untuk pengembangan lokal), jadi **wajib diisi di server**.
+
+1. Buat kunci sekali saja, lalu isi nilai yang sama di `.env` kedua aplikasi:
+
+   ```bash
+   php -r "echo bin2hex(random_bytes(32));"
+   ```
+
+   ```env
+   # .env aplikasi ini
+   PORTAL_SSO_SECRET=<kunci>
+   PORTAL_URL=http://172.18.66.243/
+   PORTAL_ORIGIN=http://172.18.66.243
+
+   # .env portal
+   DAILY_ISSUE_URL=http://172.18.66.243:8091
+   DAILY_ISSUE_SSO_SECRET=<kunci>
+   ```
+
+2. Tambahkan satu route di `routes/web.php` portal, lalu arahkan menu Daily Issue ke `/daily-issue`.
+   Sesuaikan `username` dan `name` dengan kolom tabel user portal. Setelah `php artisan config:cache`, `env()` di
+   luar folder config bernilai kosong, jadi kalau portal memakainya pindahkan kedua nilai itu ke `config/services.php`.
+
+   ```php
+   Route::middleware('auth')->get('/daily-issue', function () {
+       $user = auth()->user();
+       $data = base64_encode(json_encode([
+           'username' => $user->username,
+           'nama' => $user->name,
+           'exp' => time() + 60,
+       ]));
+       $sig = hash_hmac('sha256', $data, env('DAILY_ISSUE_SSO_SECRET'));
+
+       return redirect(env('DAILY_ISSUE_URL').'/sso?'.http_build_query(['data' => $data, 'sig' => $sig]));
+   });
+   ```
+
+   Untuk iframe, tambahkan `'embed' => 1` di `http_build_query`. Portal dan aplikasi ini harus berada di host yang
+   sama (boleh beda port); kalau beda host, browser tidak mengirim cookie sesi di dalam iframe.
+
+Tanpa link ini, halaman dialihkan ke `PORTAL_URL` dan semua API (termasuk lampiran dan export) menjawab 401.
 
 ## Keamanan sheet asli
 
@@ -165,6 +211,7 @@ pengambilan data di header tabel, export CSV, dan Export ke Chat (dengan pratinj
 | `REPORT_TITLE` | `Handover Polisi – Team RCO` | pakai tanda kutip |
 | `HANDOVER_TIMEZONE` | `Asia/Jakarta` | untuk "hari ini" |
 | `WEB_PASSWORD` | kosong | login browser (username bebas). **Wajib** kalau web dibuka dari jaringan |
+| `PORTAL_SSO_SECRET` | kosong | kunci bersama dengan portal. Kosong = siapa pun bisa membuka. **Wajib** di server |
 | `WEB_CHAT_ID` | chat pertama `ALLOWED_CHAT_IDS` | tujuan Export ke Chat |
 | `WEB_LINK_TARGET` | `asli` | link baris: `asli` (butuh akses) atau `transit` (cermin publik) |
 | `TRANSIT_SPREADSHEET_ID` | ID transit | dipakai kalau `WEB_LINK_TARGET=transit` |

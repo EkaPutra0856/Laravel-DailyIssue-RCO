@@ -11,6 +11,7 @@
   const ENGINEER_OK = JSON.parse(cfgEl.dataset.engineerStatuses); // status yang boleh disubmit engineer
   const POLL_MS = 30000;
   const ROLE_KEY = "dailyIssue.role";
+  const PORTAL_NAMA = cfgEl.dataset.portalNama || "";  // nama dari akun portal (terkunci)
 
   const st = {
     role: "polisi", nama: "",
@@ -49,7 +50,7 @@
     const url = new URLSearchParams(location.search);
     const role = url.get("role") || saved.role;
     st.role = role === "engineer" ? "engineer" : "polisi";
-    st.nama = (url.get("nama") ?? saved.nama ?? "").slice(0, 100);
+    st.nama = (PORTAL_NAMA || url.get("nama") || saved.nama || "").slice(0, 100);
     if (url.get("role") || url.get("nama")) saveRole();
     applyRole();
   }
@@ -711,13 +712,14 @@
     const openRole = () => {
       $$('#m-role input[name=role]').forEach((i) => { i.checked = i.value === st.role; });
       $("#role-nama").value = st.nama;
+      $("#role-nama").readOnly = !!PORTAL_NAMA;
       openModal("#m-role");
     };
     $("#role-chip").addEventListener("click", openRole);
     $("#topbar-user")?.addEventListener("click", openRole);
     $("#role-save").addEventListener("click", () => {
       st.role = $('#m-role input[name=role]:checked')?.value === "engineer" ? "engineer" : "polisi";
-      st.nama = $("#role-nama").value.trim().slice(0, 100);
+      st.nama = PORTAL_NAMA || $("#role-nama").value.trim().slice(0, 100);
       saveRole(); applyRole();
       closeModal($("#m-role"));
     });

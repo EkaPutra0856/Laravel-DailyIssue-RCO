@@ -2,12 +2,13 @@
 
 use App\Http\Controllers\DailyIssueController;
 use App\Http\Controllers\HandoverController;
+use App\Http\Middleware\PortalLogin;
 use App\Http\Middleware\RequireJson;
 use App\Http\Middleware\WebPassword;
 use Illuminate\Support\Facades\Route;
 
-// Prefix /api dipasang di bootstrap/app.php. Tanpa sesi/cookie; POST/PUT wajib JSON (lihat RequireJson).
-Route::middleware([WebPassword::class, RequireJson::class])->group(function () {
+// Prefix /api dipasang di bootstrap/app.php. Memakai sesi login portal (lihat PortalLogin); POST/PUT wajib JSON (lihat RequireJson).
+Route::middleware([WebPassword::class, PortalLogin::class, RequireJson::class])->group(function () {
     // Kirim rekap ke Telegram (popup polisi di halaman Daily Issue)
     Route::get('/config', [HandoverController::class, 'config']);
     Route::post('/preview', [HandoverController::class, 'preview']);

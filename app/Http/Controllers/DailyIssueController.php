@@ -66,6 +66,7 @@ class DailyIssueController extends Controller
             'media' => DailyIssue::MEDIA,
             'mediaDefault' => DailyIssue::MEDIA_DEFAULT,
             'portalUrl' => config('handover.web.portal_url'),
+            'portalNama' => session('portal_user.nama', ''),
         ]);
     }
 
@@ -288,7 +289,8 @@ class DailyIssueController extends Controller
         if (! $issue) {
             return self::json(['error' => "Issue #{$id} tidak ditemukan"], 404);
         }
-        $issue->dihapus_oleh = mb_substr(trim((string) (self::body($request)['nama'] ?? '')), 0, 100) ?: null;
+        $nama = session('portal_user.nama') ?: (self::body($request)['nama'] ?? '');
+        $issue->dihapus_oleh = mb_substr(trim((string) $nama), 0, 100) ?: null;
         $issue->save();
         $issue->delete();
 
