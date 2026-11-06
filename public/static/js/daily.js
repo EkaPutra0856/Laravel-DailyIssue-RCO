@@ -1281,7 +1281,7 @@
         box.addEventListener("focusout", pause(false));
         setInterval(() => {
             if (!paused && !document.hidden) show((now + 1) % slides.length);
-        }, 7000);
+        }, 6000);
     }
 
     async function init() {
