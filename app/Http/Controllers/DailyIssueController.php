@@ -177,7 +177,8 @@ class DailyIssueController extends Controller
                 if ($isNew) {
                     $issue = DailyIssue::create([...$fields, 'status' => 'pending', 'pic' => '']);
                 } else {
-                    $issue->update($fields);  // status, PIC, dan isian engineer tidak disentuh
+                    // status, PIC, dan isian engineer tidak disentuh
+                    $issue->update([...$fields, 'diubah_web_at' => now()]);
                 }
                 if ($isNew || mb_strtolower($oldApp) !== mb_strtolower($data['aplikasi'])) {
                     Aplikasi::catat($data['aplikasi'], $data['team']);
@@ -337,6 +338,7 @@ class DailyIssueController extends Controller
             'note' => ($data['note'] ?? null) ?: null,
             'aplikasi_ip' => ($data['aplikasi_ip'] ?? null) ?: null,
             'dokumentasi' => ($data['dokumentasi'] ?? null) ?: null,
+            'diubah_web_at' => now(),
         ]);
 
         return self::json($issue->fresh()->load('lampiran')->toRow());

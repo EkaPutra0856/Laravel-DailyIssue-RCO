@@ -26,7 +26,7 @@ class DailyIssue extends Model
     protected $fillable = [
         'tanggal', 'waktu_lapor', 'issue', 'aplikasi', 'team', 'pelapor', 'media_laporan', 'penerima_laporan',
         'pencatat_issue', 'status', 'pic', 'waktu_mulai', 'tanggal_finish', 'waktu_selesai', 'note', 'aplikasi_ip', 'dokumentasi',
-        'sumber_tab', 'sumber_baris',
+        'sumber_tab', 'sumber_baris', 'diubah_web_at',
     ];
 
     protected $attributes = ['status' => 'pending', 'pic' => ''];

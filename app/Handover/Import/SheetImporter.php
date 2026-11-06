@@ -62,10 +62,11 @@ final class SheetImporter
     /**
      * Impor satu tab. Baris yang sudah pernah diimpor dilewati, kecuali $overwrite (data dari web ikut tertimpa).
      * $lengkapi: untuk baris yang sudah ada, hanya isi Note / Aplikasi (IP) / Dokumentasi yang masih kosong.
+     * $sinkron: perbarui baris yang berubah di sheet, kecuali yang sudah diubah lewat web atau sudah dihapus.
      *
      * @return array{baru:int, diperbarui:int, dilewati:int, dilengkapi:int}
      */
-    public function importTab(string $tab, int $year, int $month, bool $overwrite = false, bool $lengkapi = false): array
+    public function importTab(string $tab, int $year, int $month, bool $overwrite = false, bool $lengkapi = false, bool $sinkron = false): array
     {
         $sheet = $this->source->fetch([$tab])[0] ?? new RawSheet($tab, []);
         $cols = Rules::detectColumns($sheet) ?? ColumnMap::default();
@@ -77,10 +78,24 @@ final class SheetImporter
 
         $stat = ['baru' => 0, 'diperbarui' => 0, 'dilewati' => 0, 'dilengkapi' => 0];
         $issues = IssueService::fixTypoDates(Rules::buildIssues($sheet, $cols), $year, $month);
-        DB::transaction(function () use ($issues, $rows, $cols, $extra, $tab, $overwrite, $lengkapi, &$stat) {
+        DB::transaction(function () use ($issues, $rows, $cols, $extra, $tab, $overwrite, $lengkapi, $sinkron, &$stat) {
             foreach ($issues as $i) {
                 // withTrashed: issue yang sudah dihapus polisi tidak dimunculkan lagi oleh impor ulang
                 $existing = DailyIssue::withTrashed()->where('sumber_tab', $tab)->where('sumber_baris', $i->issueNo)->first();
+                if ($existing && $sinkron && ! $overwrite) {
+                    if (! $existing->trashed() && $existing->diubah_web_at === null) {
+                        $existing->fill($this->attributes($i, $rows[$i->issueNo], $cols, $extra));
+                        if ($existing->isDirty()) {
+                            $existing->save();
+                            $stat['diperbarui']++;
+
+                            continue;
+                        }
+                    }
+                    $stat['dilewati']++;
+
+                    continue;
+                }
                 if ($existing && $lengkapi && ! $overwrite) {
                     $values = $this->attributes($i, $rows[$i->issueNo], $cols, $extra);
                     $isi = [];

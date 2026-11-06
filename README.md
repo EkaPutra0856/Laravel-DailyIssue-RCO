@@ -100,6 +100,24 @@ Bot memakai long polling, jadi tidak butuh URL publik. **Bot hanya boleh jalan d
 hanya bisa dipakai satu program, jadi matikan dulu bot versi Python (atau n8n lama). Kalau lupa, log bot
 menampilkan `Conflict: terminated by other getUpdates request`. Versi web boleh jalan bersamaan dengan versi Python.
 
+## Ambil data terbaru dari spreadsheet
+
+Selama tim masih mencatat di spreadsheet, jalankan ini kapan saja untuk menyalin perubahan ke database
+(spreadsheet hanya dibaca). Butuh MySQL menyala. Cara paling mudah: **klik dua kali `update-data.bat`**, atau:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File update-data.ps1
+powershell -ExecutionPolicy Bypass -File update-data.ps1 -Sejak 2026-01
+```
+
+Default-nya bulan ini + bulan lalu. Di VS Code: **Terminal → Run Task → Ambil data terbaru dari spreadsheet**.
+
+- Issue baru di sheet ditambahkan, dan mendapat nomor bulanan berikutnya.
+- Issue yang berubah di sheet (status, PIC, dll.) ikut diperbarui.
+- Issue yang **sudah diubah lewat web** (kolom `diubah_web_at` terisi) tidak ditimpa, dan issue yang sudah dihapus
+  tidak muncul lagi.
+- Baris dicocokkan lewat nama tab + nomor baris sheet, jadi jangan sisipkan/hapus baris di tengah sheet.
+
 ## Daily Issue di web portal
 
 - Peran tanpa login (portal sudah login): pilih Polisi/Engineer + nama di pojok kanan atas, atau portal

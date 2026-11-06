@@ -59,6 +59,40 @@ class ImportTest extends TestCase
         $this->assertSame(['10.0.0.9', 'Puji'], [DailyIssue::where('sumber_baris', 4)->value('aplikasi_ip'), DailyIssue::where('sumber_baris', 4)->value('pic')]);
     }
 
+    public function test_sinkron_updates_sheet_changes_but_keeps_web_edits(): void
+    {
+        $importer = new SheetImporter(SampleWorkbook::source());
+        $importer->importTab('Issue Oktober 2026', 2026, 10);
+
+        // Seolah sheet lebih baru dari database: baris 3 dan 4 berbeda; baris 4 sudah diubah lewat web; baris 5 dihapus
+        DailyIssue::where('sumber_baris', 3)->update(['pic' => 'lama', 'status' => 'onprogress']);
+        DailyIssue::where('sumber_baris', 4)->update(['pic' => 'Dari Web', 'diubah_web_at' => now()]);
+        DailyIssue::where('sumber_baris', 5)->first()->delete();
+        DailyIssue::where('sumber_baris', 14)->forceDelete();  // baris baru di sheet
+        $nomor = DailyIssue::where('sumber_baris', 3)->value('nomor');
+
+        $stat = $importer->importTab('Issue Oktober 2026', 2026, 10, sinkron: true);
+
+        $this->assertSame(['baru' => 1, 'diperbarui' => 1, 'dilewati' => 10, 'dilengkapi' => 0], $stat);
+        $by = DailyIssue::withTrashed()->get()->keyBy('sumber_baris');
+        $this->assertSame(['pending', '', $nomor], [$by[3]->status, $by[3]->pic, $by[3]->nomor]);  // ikut sheet, nomor tetap
+        $this->assertSame('Dari Web', $by[4]->pic);   // editan web tidak tertimpa
+        $this->assertTrue($by[5]->trashed());         // yang dihapus tidak muncul lagi
+
+        // Sinkron kedua: tidak ada yang berubah
+        $this->assertSame(['baru' => 0, 'diperbarui' => 0, 'dilewati' => 12, 'dilengkapi' => 0],
+            $importer->importTab('Issue Oktober 2026', 2026, 10, sinkron: true));
+    }
+
+    public function test_web_changes_mark_issue_as_edited(): void
+    {
+        (new SheetImporter(SampleWorkbook::source()))->importTab('Issue Oktober 2026', 2026, 10);
+        $d = DailyIssue::where('sumber_baris', 3)->first();
+        $this->assertNull($d->diubah_web_at);
+        $this->putJson("/api/daily/issues/{$d->id}/tindak-lanjut", ['status' => 'onprogress', 'pic' => 'Hendrik'])->assertOk();
+        $this->assertNotNull($d->fresh()->diubah_web_at);
+    }
+
     public function test_second_aplikasi_header_is_ip_column(): void
     {
         // Layout sheet asli: kolom setelah Note berjudul "Aplikasi" lagi (isinya IP)
