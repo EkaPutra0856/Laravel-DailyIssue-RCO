@@ -17,6 +17,10 @@
   </div>
   <div class="head-actions">
     <button class="role-chip" id="role-chip" aria-haspopup="dialog" title="Ganti peran & nama"></button>
+    <button class="btn small outline" id="btn-sync" type="button" title="Ambil data terbaru dari spreadsheet (seperti update-data.bat)">
+      <svg class="sync-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+      <span>Update Data</span>
+    </button>
     <button class="btn primary" id="btn-new" data-only="polisi">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
       Catat Issue

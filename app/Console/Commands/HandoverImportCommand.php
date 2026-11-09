@@ -17,7 +17,8 @@ class HandoverImportCommand extends Command
         {--sampai= : sampai bulan YYYY-MM (default: bulan ini)}
         {--timpa : timpa baris yang sudah pernah diimpor (perubahan dari web ikut tertimpa)}
         {--lengkapi : untuk baris yang sudah ada, hanya isi Note / Aplikasi (IP) / Dokumentasi yang masih kosong}
-        {--sinkron : tambah issue baru + perbarui yang berubah di sheet, kecuali yang sudah diubah/dihapus lewat web}';
+        {--sinkron : tambah issue baru + perbarui yang berubah di sheet, kecuali yang sudah diubah/dihapus lewat web}
+        {--dari-baris= : mulai dari nomor baris sekian di sheet (baris sebelum ini dilewati)}';
 
     protected $description = 'Impor issue dari tab "Issue <Bulan> <Tahun>" spreadsheet asli ke database (read-only)';
 
@@ -57,10 +58,19 @@ class HandoverImportCommand extends Command
         }
 
         $total = ['baru' => 0, 'diperbarui' => 0, 'dilewati' => 0, 'dilengkapi' => 0];
+        $dariBaris = $this->option('dari-baris') !== null ? (int) $this->option('dari-baris') : null;
         foreach ($tabs as $tab => [$y, $m]) {
             $this->line("Membaca '{$tab}' ...");
             try {
-                $stat = $importer->importTab($tab, $y, $m, (bool) $this->option('timpa'), (bool) $this->option('lengkapi'), (bool) $this->option('sinkron'));
+                $stat = $importer->importTab(
+                    $tab,
+                    $y,
+                    $m,
+                    (bool) $this->option('timpa'),
+                    (bool) $this->option('lengkapi'),
+                    (bool) $this->option('sinkron'),
+                    $dariBaris
+                );
             } catch (SourceError $e) {
                 $this->error("  ❌ {$e->getMessage()}");
 

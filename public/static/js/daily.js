@@ -579,6 +579,28 @@
         openModal("#m-new");
     }
 
+    async function syncSheet() {
+        const btn = $("#btn-sync");
+        if (!btn || btn.disabled) return;
+        const origHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spin"></span> <span>Sinkron...</span>`;
+        try {
+            const res = await api("api/daily/sync", "POST", {
+                start: st.start,
+                end: st.end,
+            });
+            Portal.toast(res.message || "Update data dari spreadsheet selesai.");
+            await load(true);
+            await loadApps();
+        } catch (e) {
+            Portal.toast("Gagal update data: " + e.message, true);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = origHtml;
+        }
+    }
+
     // Rekomendasi Aplikasi -> Team: aplikasi yang sudah dikenal otomatis mengisi team penanggung jawabnya.
     let teamAuto = null;
     function onAppInput() {
@@ -1157,6 +1179,7 @@
             removeIds.has(id) ? removeIds.delete(id) : removeIds.add(id);
             renderOldFiles();
         });
+        $("#btn-sync")?.addEventListener("click", syncSheet);
         $("#btn-new").addEventListener("click", openNew);
         $("#btn-tg").addEventListener("click", openTelegram);
         ["#opt-detail", "#opt-split"].forEach((s) =>

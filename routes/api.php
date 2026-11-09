@@ -5,6 +5,7 @@ use App\Http\Controllers\Daily\ExportController;
 use App\Http\Controllers\Daily\FollowUpController;
 use App\Http\Controllers\Daily\IssueController;
 use App\Http\Controllers\Daily\LampiranController;
+use App\Http\Controllers\Daily\SyncController;
 use App\Http\Controllers\Daily\TindakLanjutController;
 use App\Http\Controllers\HandoverController;
 use App\Http\Middleware\PortalLogin;
@@ -43,5 +44,8 @@ Route::middleware([WebPassword::class, PortalLogin::class, RequireJson::class])-
         Route::get('/lampiran/{lampiran}', [LampiranController::class, 'show']);
         Route::get('/aplikasi', [AplikasiController::class, 'index']);
         Route::get('/export', ExportController::class);
+
+        // Update / sinkronisasi issue dari spreadsheet
+        Route::post('/sync', SyncController::class);
     });
 });

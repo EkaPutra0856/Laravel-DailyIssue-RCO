@@ -27,20 +27,20 @@ final class SheetImporter
         'media_laporan' => ['media laporan', 'media'],
         'penerima_laporan' => ['penerima laporan', 'penerima'],
         'pencatat_issue' => ['pencatat issue', 'pencatat'],
-        'waktu_lapor' => ['waktu lapor', 'jam lapor'],
-        'waktu_mulai' => ['waktu mulai', 'jam mulai'],
-        'tanggal_finish' => ['tanggal finish', 'tgl finish', 'tanggal selesai'],
-        'waktu_selesai' => ['waktu selesai', 'jam selesai'],
+        'waktu_lapor' => ['waktu lapor', 'jam lapor', 'waktu lapor (jam)', 'waktu_lapor', 'jam'],
+        'waktu_mulai' => ['waktu mulai', 'jam mulai', 'waktu_mulai'],
+        'tanggal_finish' => ['tanggal finish', 'tgl finish', 'tanggal selesai', 'tgl selesai'],
+        'waktu_selesai' => ['waktu selesai', 'jam selesai', 'waktu_selesai'],
         'note' => ['note', 'notes', 'catatan'],
         'aplikasi_ip' => ['aplikasi (ip)', 'aplikasi ip', 'ip aplikasi', 'ip'],
         'dokumentasi' => ['dokumentasi', 'dok', 'dokumen'],
     ];
-    // A Tanggal, B ISSUE, C Aplikasi, D Pelapor, E Media, F Penerima, G Pencatat, H Waktu Lapor, I Status, J Pic,
-    // K Waktu Mulai, L Tanggal Finish, M Waktu Selesai
+    // A Tanggal, B ISSUE, C Aplikasi, D TEAM, E Pelapor, F Media, G Penerima, H Pencatat, I Waktu Lapor, J Status, K Pic,
+    // L Waktu Mulai, M Tanggal Finish, N Waktu Selesai, O Note, P Aplikasi (IP), Q Dokumentasi
     private const EXTRA_DEFAULT = [
-        'issue' => 1, 'media_laporan' => 4, 'penerima_laporan' => 5, 'pencatat_issue' => 6, 'waktu_lapor' => 7,
-        'waktu_mulai' => 10, 'tanggal_finish' => 11, 'waktu_selesai' => 12,
-        'note' => 13, 'aplikasi_ip' => 14, 'dokumentasi' => 15,
+        'issue' => 1, 'media_laporan' => 5, 'penerima_laporan' => 6, 'pencatat_issue' => 7, 'waktu_lapor' => 8,
+        'waktu_mulai' => 11, 'tanggal_finish' => 12, 'waktu_selesai' => 13,
+        'note' => 14, 'aplikasi_ip' => 15, 'dokumentasi' => 16,
     ];
 
     public function __construct(private Source $source) {}
@@ -63,10 +63,11 @@ final class SheetImporter
      * Impor satu tab. Baris yang sudah pernah diimpor dilewati, kecuali $overwrite (data dari web ikut tertimpa).
      * $lengkapi: untuk baris yang sudah ada, hanya isi Note / Aplikasi (IP) / Dokumentasi yang masih kosong.
      * $sinkron: perbarui baris yang berubah di sheet, kecuali yang sudah diubah lewat web atau sudah dihapus.
+     * $dariBaris: jika diisi, lewati baris sebelum nomor baris ini di sheet (tidak memengaruhi baris di atasnya).
      *
      * @return array{baru:int, diperbarui:int, dilewati:int, dilengkapi:int}
      */
-    public function importTab(string $tab, int $year, int $month, bool $overwrite = false, bool $lengkapi = false, bool $sinkron = false): array
+    public function importTab(string $tab, int $year, int $month, bool $overwrite = false, bool $lengkapi = false, bool $sinkron = false, ?int $dariBaris = null): array
     {
         $sheet = $this->source->fetch([$tab])[0] ?? new RawSheet($tab, []);
         $cols = Rules::detectColumns($sheet) ?? ColumnMap::default();
@@ -78,8 +79,13 @@ final class SheetImporter
 
         $stat = ['baru' => 0, 'diperbarui' => 0, 'dilewati' => 0, 'dilengkapi' => 0];
         $issues = IssueService::fixTypoDates(Rules::buildIssues($sheet, $cols), $year, $month);
-        DB::transaction(function () use ($issues, $rows, $cols, $extra, $tab, $overwrite, $lengkapi, $sinkron, &$stat) {
+        DB::transaction(function () use ($issues, $rows, $cols, $extra, $tab, $overwrite, $lengkapi, $sinkron, $dariBaris, &$stat) {
             foreach ($issues as $i) {
+                // Jika mulai dari baris tertentu, lewati baris di atasnya
+                if ($dariBaris !== null && $i->issueNo < $dariBaris) {
+                    continue;
+                }
+
                 // withTrashed: issue yang sudah dihapus polisi tidak dimunculkan lagi oleh impor ulang
                 $existing = DailyIssue::withTrashed()->where('sumber_tab', $tab)->where('sumber_baris', $i->issueNo)->first();
                 if ($existing && $sinkron && ! $overwrite) {
@@ -180,12 +186,60 @@ final class SheetImporter
         return mb_substr(Py::strip(Py::str($v)), 0, $max);
     }
 
-    /** Jam "09:00" / "9.00" / "09:00:00" -> "09:00:00"; selain itu null. */
+    /** Jam "09:00" / "9.00" / "09:00:00" / serial number Excel / ISO datetime -> "09:00:00"; selain itu null. */
     private static function time(RawRow $row, ?int $idx): ?string
     {
         $v = $idx === null ? null : ($row->values[$idx] ?? null);
-        if (is_string($v) && preg_match('/^\s*(\d{1,2})[:.](\d{2})(?::(\d{2}))?/', $v, $m) && (int) $m[1] < 24 && (int) $m[2] < 60) {
-            return sprintf('%02d:%02d:00', $m[1], $m[2]);
+        if ($v === null || $v === '' || is_bool($v)) {
+            return null;
+        }
+
+        // Tangani pecahan serial time Excel (0.0001 - 0.9999...)
+        if (is_float($v) && $v > 0 && $v < 1) {
+            $totalSec = (int) round($v * 86400);
+            $h = intdiv($totalSec, 3600) % 24;
+            $m = intdiv($totalSec % 3600, 60);
+            $s = $totalSec % 60;
+            return sprintf('%02d:%02d:%02d', $h, $m, $s);
+        }
+
+        // Jika angka jam seperti 7.2 atau 19.39
+        if (is_numeric($v)) {
+            $v = (string) $v;
+        }
+
+        if (is_string($v)) {
+            $s = trim($v);
+
+            // 1. Format jam biasa di awal: "07:20", "7:20", "7.20", "19.39", "08:37 & 09:49"
+            if (preg_match('/^\s*(\d{1,2})[:.](\d{2})(?::(\d{2}))?/', $s, $m)) {
+                $h = (int) $m[1];
+                $min = (int) $m[2];
+                $sec = isset($m[3]) ? (int) $m[3] : 0;
+                if ($h < 24 && $min < 60 && $sec < 60) {
+                    return sprintf('%02d:%02d:%02d', $h, $min, $sec);
+                }
+            }
+
+            // 2. Format ISO / datetime: "2026-11-09 07:20:00" atau "1899-12-30T07:20:00.000Z"
+            if (preg_match('/(?:T|\s)(\d{1,2})[:.](\d{2})(?::(\d{2}))?/', $s, $m)) {
+                $h = (int) $m[1];
+                $min = (int) $m[2];
+                $sec = isset($m[3]) ? (int) $m[3] : 0;
+                if ($h < 24 && $min < 60 && $sec < 60) {
+                    return sprintf('%02d:%02d:%02d', $h, $min, $sec);
+                }
+            }
+
+            // 3. Format jam di bagian manapun dalam string (misal: "pukul 7:20")
+            if (preg_match('/(\d{1,2})[:.](\d{2})(?::(\d{2}))?/', $s, $m)) {
+                $h = (int) $m[1];
+                $min = (int) $m[2];
+                $sec = isset($m[3]) ? (int) $m[3] : 0;
+                if ($h < 24 && $min < 60 && $sec < 60) {
+                    return sprintf('%02d:%02d:%02d', $h, $min, $sec);
+                }
+            }
         }
 
         return null;
@@ -201,10 +255,22 @@ final class SheetImporter
         };
         $aplikasi = self::text($row, $cols->aplikasi, 150);
 
+        $issueText = self::text($row, $extra['issue'], 65000) ?: '(tanpa keterangan)';
+        $waktuLapor = self::time($row, $extra['waktu_lapor']);
+
+        // Fallback: Jika waktu lapor di kolom I kosong, tapi teks issue diawali timestamp chat WhatsApp (misal: "[08.14, 9/11/2026]")
+        if ($waktuLapor === null && preg_match('/^\[(\d{1,2})[:.](\d{2})[,\s]/', $issueText, $m)) {
+            $h = (int) $m[1];
+            $min = (int) $m[2];
+            if ($h < 24 && $min < 60) {
+                $waktuLapor = sprintf('%02d:%02d:00', $h, $min);
+            }
+        }
+
         return [
             'tanggal' => $i->tanggal->toDateString(),
-            'waktu_lapor' => self::time($row, $extra['waktu_lapor']),
-            'issue' => self::text($row, $extra['issue'], 65000) ?: '(tanpa keterangan)',
+            'waktu_lapor' => $waktuLapor,
+            'issue' => $issueText,
             'aplikasi' => str_contains($aplikasi, "\n") ? $i->aplikasi : $aplikasi,
             'team' => $i->team,
             'pelapor' => self::text($row, $cols->pelapor, 150),
