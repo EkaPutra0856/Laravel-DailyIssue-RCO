@@ -24,127 +24,13 @@
   </div>
 </section>
 
-<div class="section-label">Ringkasan</div>
-<div class="tiles" id="tiles">
-  @foreach (['pending' => ['slate', 'Belum dikerjakan'], 'onprogress' => ['yellow', 'Sedang dikerjakan'], 'trouble' => ['red', 'Ada kendala'], 'done' => ['green', 'Selesai']] as $key => [$color, $desc])
-    <button class="tile" data-status="{{ $key }}" title="Klik untuk tampilkan/sembunyikan {{ $statuses[$key] }}">
-      <span class="tile-icon {{ $color }}">
-        @switch($key)
-          @case('pending')<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>@break
-          @case('onprogress')<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>@break
-          @case('trouble')<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 3 2 20h20L12 3z"/><path d="M12 10v4M12 17.5v.01"/></svg>@break
-          @default<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
-        @endswitch
-      </span>
-      <span class="tile-body">
-        <span class="tile-num" data-count="{{ $key }}">–</span>
-        <span class="tile-title">{{ $statuses[$key] }}</span>
-        <span class="tile-desc">{{ $desc }}</span>
-      </span>
-    </button>
-  @endforeach
-</div>
-
-<section class="card follow-up-panel" id="follow-up-panel" aria-labelledby="follow-up-title">
-  <div class="follow-up-head">
-    <h2 class="card-title" id="follow-up-title">Issue Follow-up</h2>
-    <span class="count" id="follow-up-count">0 issue</span>
-  </div>
-  <div class="follow-up-list" id="follow-up-list" aria-live="polite"></div>
-  <div class="follow-up-empty" id="follow-up-empty" hidden>Belum ada issue follow-up.</div>
-</section>
-
-<div class="section-label">Filter</div>
-<section class="card filters">
-  <div class="f-row">
-    <span class="f-label">Periode</span>
-    <div class="seg" id="presets">
-      <button data-p="today">Hari ini</button>
-      <button data-p="yesterday">Kemarin</button>
-      <button data-p="week">Minggu ini</button>
-      <button data-p="lastweek">Minggu lalu</button>
-      <button data-p="month">Bulan ini</button>
-      <button data-p="lastmonth">Bulan lalu</button>
-    </div>
-    <div class="dates">
-      <input type="date" id="start" aria-label="Tanggal mulai"> <span class="muted">s/d</span>
-      <input type="date" id="end" aria-label="Tanggal akhir">
-    </div>
-  </div>
-  <div class="f-row">
-    <span class="f-label">Tim</span>
-    <div class="chips" id="team-chips">
-      @foreach ($teams as $t)<button class="chip" data-t="{{ $t }}">{{ $t }}</button>@endforeach
-    </div>
-    <label class="month-pick" title="Lihat rekap bulan tertentu">Bulan
-      <input type="month" id="month" aria-label="Pilih bulan">
-    </label>
-    <input class="pill-search grow" id="q" type="search" placeholder="Cari nomor, aplikasi, pelapor, PIC, isi issue... (tekan /)">
-    <button class="btn" id="reset-filter">Reset filter</button>
-  </div>
-</section>
+@include('daily.cards.summary')
+@include('daily.cards.follow-up')
+@include('daily.cards.filters')
 
 <div class="grid-main">
-<section class="card">
-  <div class="table-head">
-    <h2 class="card-title">Daftar Issue</h2>
-    <span class="count" id="count"></span>
-    <span class="sync" id="sync" role="status" aria-live="polite" hidden></span>
-    <span class="spacer"></span>
-    <a class="btn small outline" id="btn-excel" href="#" title="Unduh issue periode ini (sesuai filter tim) sebagai Excel">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>
-      Download Excel
-    </a>
-    <button class="btn small tg" id="btn-tg" data-only="polisi" title="Pratinjau, salin, atau kirim rekap issue yang tampil ke grup Telegram">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M21.9 4.6 18.7 19.8c-.2 1.1-.9 1.3-1.8.8l-4.9-3.6-2.4 2.3c-.3.3-.5.5-1 .5l.4-5 9-8.2c.4-.4-.1-.6-.6-.2L6.3 13.4l-4.8-1.5c-1-.3-1.1-1 .2-1.5L20.4 3.2c.9-.3 1.7.2 1.5 1.4z"/></svg>
-      Kirim ke Telegram
-    </button>
-  </div>
-  <div class="tbl-wrap">
-    <table>
-      <thead>
-        <tr><th>No</th><th>Lapor</th><th>Issue</th><th>Aplikasi</th><th>Team</th><th>Pelapor</th><th>Status</th><th>PIC</th><th>Note</th><th>Aplikasi (IP)</th><th>Dokumentasi</th><th></th></tr>
-      </thead>
-      <tbody id="rows"></tbody>
-    </table>
-    <div class="empty" id="empty" hidden></div>
-  </div>
-</section>
-
-<aside class="card side-panel">
-  <div class="panel-h"><h2 class="card-title">Per Tim</h2></div>
-  <div class="teams" id="teams"></div>
-  <div class="legend">
-    @foreach ($statuses as $k => $label)<span><span class="dot {{ $k }}"></span> {{ $label }}</span>@endforeach
-  </div>
-  @php
-    // Kata semangat di panel Per Tim. Tambah atau ubah kalimatnya di sini.
-    $semangat = [
-      'Tidak ada superman, yang ada adalah superteam.',
-      'Masalah sebesar apa pun terasa lebih ringan kalau dikerjakan bersama.',
-      'Satu issue selesai, satu rekan terbantu.',
-      'Tenang, teliti, tuntaskan.',
-      'Terima kasih sudah berjaga hari ini.',
-      'Pause before execute -APS 2026',
-    ];
-  @endphp
-  <section class="spirit" id="spirit" aria-label="Kata semangat untuk rekan-rekan RCO">
-    <div class="spirit-head">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-      <span>Semangat, rekan-rekan RCO!</span>
-    </div>
-    <div class="spirit-slides">
-      @foreach ($semangat as $i => $kalimat)
-        <p class="spirit-slide{{ $i === 0 ? ' on' : '' }}">{{ $kalimat }}</p>
-      @endforeach
-    </div>
-    <div class="spirit-dots">
-      @foreach ($semangat as $i => $kalimat)
-        <button type="button" class="{{ $i === 0 ? 'on' : '' }}" data-slide="{{ $i }}" aria-label="Tampilkan kata semangat {{ $i + 1 }}"></button>
-      @endforeach
-    </div>
-  </section>
-</aside>
+  @include('daily.cards.issues')
+  @include('daily.cards.teams')
 </div>
 @endsection
 
