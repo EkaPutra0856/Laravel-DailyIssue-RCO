@@ -11,8 +11,17 @@
       <button data-p="lastmonth">Bulan lalu</button>
     </div>
     <div class="dates">
-      <input type="date" id="start" aria-label="Tanggal mulai"> <span class="muted">s/d</span>
-      <input type="date" id="end" aria-label="Tanggal akhir">
+      <label class="date-field">
+        <input type="text" id="start" inputmode="numeric" placeholder="DD/MM/YYYY" aria-label="Tanggal mulai" autocomplete="off">
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/></svg>
+        <input class="date-picker" type="date" id="start-picker" aria-label="Pilih tanggal mulai" tabindex="-1">
+      </label>
+      <span class="muted">s/d</span>
+      <label class="date-field">
+        <input type="text" id="end" inputmode="numeric" placeholder="DD/MM/YYYY" aria-label="Tanggal akhir" autocomplete="off">
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/></svg>
+        <input class="date-picker" type="date" id="end-picker" aria-label="Pilih tanggal akhir" tabindex="-1">
+      </label>
     </div>
   </div>
   <div class="f-row">

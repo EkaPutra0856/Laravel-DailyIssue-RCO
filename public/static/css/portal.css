@@ -213,7 +213,11 @@ tbody tr[data-id] { cursor: pointer; }
 .f-row { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; padding: 10px 0; }
 .f-row .grow { flex: 1 1 260px; min-width: 200px; width: auto; padding: 7px 14px; font-size: 13px; }
 .filters .seg button { padding: 6px 11px; }
-.filters .dates input { width: 138px; }
+.filters .dates .date-field { position: relative; display: inline-flex; align-items: center; }
+.filters .dates .date-field > input[type="text"] { width: 138px; padding-right: 34px; }
+.filters .dates .date-field > svg { position: absolute; right: 9px; width: 16px; height: 16px; color: #1b2435; pointer-events: none; }
+.filters .dates .date-picker { position: absolute; top: 0; right: 0; width: 34px; height: 100%; padding: 0; border: 0; opacity: 0; cursor: pointer; }
+.filters .dates .date-field > input.invalid { border-color: var(--danger); }
 .filters .month-pick { margin-left: 6px; }
 .filters .month-pick input { width: 150px; }
 .filters #reset-filter { padding: 7px 14px; }

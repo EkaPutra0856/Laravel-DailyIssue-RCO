@@ -48,6 +48,20 @@
     const isoDate = (d) =>
         `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
     const fmtDate = (s) => (s ? s.split("-").reverse().join("/") : "");
+    const parseFilterDate = (s) => {
+        if (!s) return "";
+        const match = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(s.trim());
+        if (!match) return null;
+        const [, day, month, year] = match;
+        const date = new Date(Number(year), Number(month) - 1, Number(day));
+        if (
+            date.getFullYear() !== Number(year) ||
+            date.getMonth() !== Number(month) - 1 ||
+            date.getDate() !== Number(day)
+        )
+            return null;
+        return `${year}-${pad(Number(month))}-${pad(Number(day))}`;
+    };
     const nowLocal = () => {
         const d = new Date();
         return `${isoDate(d)}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
@@ -166,8 +180,14 @@
     }
 
     function syncPeriod() {
-        $("#start").value = st.start;
-        $("#end").value = st.end;
+        $("#start").value = fmtDate(st.start);
+        $("#end").value = fmtDate(st.end);
+        $("#start-picker").value = st.start;
+        $("#end-picker").value = st.end;
+        ["#start", "#end"].forEach((selector) => {
+            $(selector).classList.remove("invalid");
+            $(selector).removeAttribute("aria-invalid");
+        });
         $$("#presets button").forEach((b) =>
             b.classList.toggle("on", b.dataset.p === st.preset),
         );
@@ -1065,15 +1085,30 @@
                 load();
             }),
         );
-        ["#start", "#end"].forEach((s) =>
-            $(s).addEventListener("change", () => {
-                st.start = $("#start").value;
-                st.end = $("#end").value;
+        [
+            ["#start", "#start-picker"],
+            ["#end", "#end-picker"],
+        ].forEach(([textSelector, pickerSelector]) => {
+            const text = $(textSelector);
+            const picker = $(pickerSelector);
+            const updateDate = (value) => {
+                if (value !== undefined) text.value = fmtDate(value);
+                const parsed = parseFilterDate(text.value);
+                if (parsed === null) {
+                    text.classList.add("invalid");
+                    text.setAttribute("aria-invalid", "true");
+                    return;
+                }
+                text.classList.remove("invalid");
+                text.removeAttribute("aria-invalid");
+                st[textSelector === "#start" ? "start" : "end"] = parsed;
                 st.preset = "";
                 syncPeriod();
                 if (st.start && st.end && st.start <= st.end) load();
-            }),
-        );
+            };
+            text.addEventListener("change", () => updateDate());
+            picker.addEventListener("change", () => updateDate(picker.value));
+        });
         $("#month").addEventListener("change", (e) => {
             if (e.target.value) {
                 setMonth(e.target.value);
