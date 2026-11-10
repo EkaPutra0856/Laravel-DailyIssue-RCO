@@ -19,6 +19,7 @@
         preset: "today",
         start: "",
         end: "",
+        sort: { key: "", direction: "ascending" },
         teams: new Set(TEAMS),
         q: "",
         hidden: new Set(), // tim yang dipilih; status yang disembunyikan
@@ -270,7 +271,7 @@
     // ---------- render ----------
     function visibleRows() {
         const q = st.q.toLowerCase();
-        return st.rows.filter(
+        const rows = st.rows.filter(
             (r) =>
                 !st.hidden.has(r.status) &&
                 st.teams.has(r.team) &&
@@ -279,6 +280,40 @@
                         .toLowerCase()
                         .includes(q)),
         );
+        if (!st.sort.key) return rows;
+        const direction = st.sort.direction === "ascending" ? 1 : -1;
+        const value = (row) => {
+            if (st.sort.key === "nomor") return Number(row.nomor) || 0;
+            if (st.sort.key === "lapor")
+                return `${row.tanggal || ""} ${row.waktu_lapor || ""}`;
+            if (st.sort.key === "status") return STATUS[row.status] || row.status;
+            return row[st.sort.key] || "";
+        };
+        return rows
+            .map((row, index) => ({ row, index }))
+            .sort((a, b) => {
+                const left = value(a.row);
+                const right = value(b.row);
+                const comparison =
+                    typeof left === "number" && typeof right === "number"
+                        ? left - right
+                        : String(left).localeCompare(String(right), "id", {
+                              numeric: true,
+                              sensitivity: "base",
+                          });
+                return comparison ? comparison * direction : a.index - b.index;
+            })
+            .map(({ row }) => row);
+    }
+
+    function renderSortHeaders() {
+        $$("#issue-table th[data-sort]").forEach((header) => {
+            const active = header.dataset.sort === st.sort.key;
+            header.setAttribute(
+                "aria-sort",
+                active ? st.sort.direction : "none",
+            );
+        });
     }
 
     function renderTiles() {
@@ -337,6 +372,7 @@
 
     function renderRows(changed = null) {
         const rows = visibleRows();
+        renderSortHeaders();
         $("#count").textContent =
             `${rows.length} issue${rows.length !== st.rows.length ? ` dari ${st.rows.length}` : ""}`;
         const openTitle =
@@ -1079,6 +1115,19 @@
 
     // ---------- event ----------
     function bind() {
+        $$("#issue-table th[data-sort]").forEach((header) =>
+            header.querySelector(".sort-button").addEventListener("click", () => {
+                const key = header.dataset.sort;
+                st.sort = {
+                    key,
+                    direction:
+                        st.sort.key === key && st.sort.direction === "ascending"
+                            ? "descending"
+                            : "ascending",
+                };
+                renderRows();
+            }),
+        );
         $$("#presets button").forEach((b) =>
             b.addEventListener("click", () => {
                 setPreset(b.dataset.p);

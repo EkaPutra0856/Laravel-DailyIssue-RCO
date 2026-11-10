@@ -121,6 +121,11 @@ body.embed .tbl-wrap { max-height: none; }
 table { border-collapse: collapse; width: 100%; }
 th, td { padding: 10px 12px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; font-size: 13px; }
 th { position: sticky; top: 0; z-index: 1; background: #f7f9fe; color: #6d7a99; font-size: 11.5px; text-transform: uppercase; letter-spacing: .3px; font-weight: 650; white-space: nowrap; }
+.sort-button { display: inline-flex; align-items: center; gap: 5px; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; letter-spacing: inherit; text-transform: inherit; cursor: pointer; }
+.sort-button::after { content: "↕"; color: #a6afc1; font-size: 15px; font-weight: 900; }
+th[aria-sort="ascending"] .sort-button::after { content: "↑"; color: var(--blue); }
+th[aria-sort="descending"] .sort-button::after { content: "↓"; color: var(--blue); }
+.sort-button:focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; border-radius: 2px; }
 tbody tr:hover { background: #f8faff; }
 tbody tr.flash { animation: flash 1.6s ease-out; }
 @keyframes flash { from { background: #fff6cc; } to { background: transparent; } }

@@ -14,9 +14,22 @@
     </button>
   </div>
   <div class="tbl-wrap">
-    <table>
+    <table id="issue-table">
       <thead>
-        <tr><th>No</th><th>Lapor</th><th>Issue</th><th>Aplikasi</th><th>Team</th><th>Pelapor</th><th>Status</th><th>PIC</th><th>Note</th><th>Aplikasi (IP)</th><th>Dokumentasi</th><th></th></tr>
+        <tr>
+          <th data-sort="nomor"><button type="button" class="sort-button" aria-label="Urutkan No">No</button></th>
+          <th data-sort="lapor"><button type="button" class="sort-button" aria-label="Urutkan Lapor">Lapor</button></th>
+          <th data-sort="issue"><button type="button" class="sort-button" aria-label="Urutkan Issue">Issue</button></th>
+          <th data-sort="aplikasi"><button type="button" class="sort-button" aria-label="Urutkan Aplikasi">Aplikasi</button></th>
+          <th data-sort="team"><button type="button" class="sort-button" aria-label="Urutkan Team">Team</button></th>
+          <th data-sort="pelapor"><button type="button" class="sort-button" aria-label="Urutkan Pelapor">Pelapor</button></th>
+          <th data-sort="status"><button type="button" class="sort-button" aria-label="Urutkan Status">Status</button></th>
+          <th data-sort="pic"><button type="button" class="sort-button" aria-label="Urutkan PIC">PIC</button></th>
+          <th data-sort="note"><button type="button" class="sort-button" aria-label="Urutkan Note">Note</button></th>
+          <th data-sort="aplikasi_ip"><button type="button" class="sort-button" aria-label="Urutkan Aplikasi IP">Aplikasi (IP)</button></th>
+          <th data-sort="dokumentasi"><button type="button" class="sort-button" aria-label="Urutkan Dokumentasi">Dokumentasi</button></th>
+          <th></th>
+        </tr>
       </thead>
       <tbody id="rows"></tbody>
     </table>
