@@ -171,6 +171,8 @@ class RulesTest extends TestCase
         $sheet = new RawSheet('t', [
             new RawRow(3, ['2026-07-02', '1 ~a', null, null], array_fill(0, 4, null)),
             new RawRow(4, [null, null, null, null], array_fill(0, 4, null)),
+            new RawRow(5, ['2026-07-02', null, null, null], array_fill(0, 4, null)), // hanya tanggal, issue kosong
+            new RawRow(6, ['2026-07-02', '', '   ', ''], array_fill(0, 4, null)),     // string kosong
         ]);
         $this->assertSame([3], array_map(fn ($i) => $i->issueNo, Rules::buildIssues($sheet, self::cols())));
     }

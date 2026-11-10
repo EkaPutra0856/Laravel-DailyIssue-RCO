@@ -19,6 +19,9 @@ Data issue sekarang disimpan di **database MySQL**, tidak lagi di spreadsheet:
 
 Aturan rekap dan format pesan di-porting dari versi Python dan sudah dicocokkan dengan data asli.
 
+Penjelasan teknis cara kerja kode (alur request, database, keamanan, impor, bot, frontend) ada di
+**[docs/README-TEKNIS.md](docs/README-TEKNIS.md)**.
+
 ## Instalasi
 
 Butuh **PHP 8.2+** (ekstensi curl, mbstring, openssl, fileinfo) dan **Composer**. XAMPP atau Laragon sudah

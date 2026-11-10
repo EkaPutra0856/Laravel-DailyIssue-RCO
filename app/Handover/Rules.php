@@ -186,19 +186,28 @@ final class Rules
             if ($cols->headerRow && $row->rowNumber <= $cols->headerRow) {
                 continue;
             }
-            $tanggal = Dates::parseCellDate(self::cell($row->values, $cols->tanggal));
+
+            // Abaikan baris kosong atau baris yang hanya berisi tanggal tanpa data issue
+            $hasIssue = false;
+            foreach ($row->values as $i => $v) {
+                if ($i !== $cols->tanggal && ((is_string($v) && Py::strip($v) !== '') || Py::isNumber($v))) {
+                    $hasIssue = true;
+                    break;
+                }
+            }
+            if (! $hasIssue) {
+                continue;
+            }
+
+            $rawDate = self::cell($row->values, $cols->tanggal);
+            if (is_string($rawDate) && Py::lower(Py::strip($rawDate)) === 'tanggal') {
+                continue;
+            }
+
+            $tanggal = Dates::parseCellDate($rawDate);
             if ($tanggal === null) {
                 // Baris berisi issue tapi tanggalnya lupa diisi: pakai tanggal baris sebelumnya.
-                $rawDate = self::cell($row->values, $cols->tanggal);
-                $hasIssue = false;
-                foreach (array_slice($row->values, 0, $cols->pic + 1) as $i => $v) {
-                    if ($i !== $cols->tanggal && ((is_string($v) && Py::strip($v) !== '') || Py::isNumber($v))) {
-                        $hasIssue = true;
-                        break;
-                    }
-                }
-                if ($lastDate === null || ! $hasIssue
-                    || (is_string($rawDate) && Py::lower(Py::strip($rawDate)) === 'tanggal')) {
+                if ($lastDate === null) {
                     continue;
                 }
                 $tanggal = $lastDate;
