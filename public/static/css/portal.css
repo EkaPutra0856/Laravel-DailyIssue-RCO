@@ -227,7 +227,6 @@ tbody tr[data-id] { cursor: pointer; }
 .filters .dates .date-field > svg { position: absolute; right: 9px; width: 16px; height: 16px; color: #1b2435; pointer-events: none; }
 .filters .dates .date-picker { position: absolute; top: 0; right: 0; width: 34px; height: 100%; padding: 0; border: 0; opacity: 0; cursor: pointer; }
 .filters .dates .date-field > input.invalid { border-color: var(--danger); }
-.filters .month-pick { margin-left: 6px; }
 .filters .month-pick input { width: 150px; }
 .filters #reset-filter { padding: 7px 14px; }
 .f-row + .f-row { border-top: 1px dashed var(--border); }
