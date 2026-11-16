@@ -13,7 +13,7 @@
 <section class="page-head">
   <div>
     <h1>Daily Issue RCO</h1>
-    <p class="sub">Polisi mencatat issue, engineer menindaklanjuti sampai selesai.</p>
+    <p class="sub">Polisi mencatat issue, engineer menindaklanjuti sampai selesai. Semangat rekan-rekan RCO</p>
   </div>
   <div class="head-actions">
     <button class="role-chip" id="role-chip" aria-haspopup="dialog" title="Ganti peran & nama"></button>
