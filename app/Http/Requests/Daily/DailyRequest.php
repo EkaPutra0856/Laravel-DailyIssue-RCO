@@ -18,7 +18,7 @@ abstract class DailyRequest extends FormRequest
             'in' => ':attribute tidak valid.',
             'date_format' => 'Format :attribute tidak valid.',
             'date' => 'Format :attribute tidak valid.',
-            'status.in' => 'Status harus On Progress, Trouble, atau Done.',
+            'status.in' => 'Status harus On Progress, Trouble, Other, atau Done.',
             'lampiran.max' => 'Maksimal 10 lampiran per issue.',
             'lampiran.*.max' => 'Ukuran tiap lampiran maksimal 10 MB.',
             'lampiran.*.mimes' => 'Jenis file lampiran tidak didukung (gambar, PDF, Word/Excel/PowerPoint, TXT/CSV, ZIP).',

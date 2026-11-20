@@ -76,6 +76,22 @@ class WebTest extends TestCase
         $this->assertStringContainsString('Total Pending: 4 Issue (Putih)', $msgs[0]);
     }
 
+    public function test_preview_uses_requested_two_day_range(): void
+    {
+        $msg = $this->postJson('/api/preview', [...self::BODY, 'start' => '2026-11-19', 'end' => '2026-11-20'])
+            ->assertOk()->json('messages.0');
+        $this->assertStringContainsString('19/11/2026 - 20/11/2026', $msg);
+    }
+
+    public function test_preview_includes_empty_other_category(): void
+    {
+        $msg = $this->postJson('/api/preview', [...self::BODY, 'categories' => ['other']])
+            ->assertOk()->json('messages.0');
+        $this->assertStringContainsString('🟠 <b>Issue Other (Orange):</b>', $msg);
+        $this->assertStringContainsString('Tidak ada issue Other', $msg);
+        $this->assertStringContainsString('Total Other: 0 Issue (Orange)', $msg);
+    }
+
     public function test_preview_team_filter_and_visible_keys(): void
     {
         $msg = $this->postJson('/api/preview', [...self::BODY, 'teams' => ['Tim 1']])->json('messages.0');

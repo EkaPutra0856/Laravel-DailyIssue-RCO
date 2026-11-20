@@ -16,10 +16,10 @@ class DailyIssue extends Model
 {
     use SoftDeletes;  // hapus oleh polisi = ditandai deleted_at, data tetap ada
 
-    public const STATUSES = ['pending', 'onprogress', 'trouble', 'done'];
+    public const STATUSES = ['pending', 'onprogress', 'trouble', 'other', 'done'];
     // Status yang boleh dikirim engineer (pending = belum dikerjakan, bukan hasil tindak lanjut).
-    public const ENGINEER_STATUSES = ['onprogress', 'trouble', 'done'];
-    public const STATUS_LABEL = ['pending' => 'Pending', 'onprogress' => 'On Progress', 'trouble' => 'Trouble', 'done' => 'Done'];
+    public const ENGINEER_STATUSES = ['onprogress', 'trouble', 'other', 'done'];
+    public const STATUS_LABEL = ['pending' => 'Pending', 'onprogress' => 'On Progress', 'trouble' => 'Trouble', 'other' => 'Other', 'done' => 'Done'];
     public const MEDIA = ['WhatsApp', 'Personal Chat', 'Email', 'Telepon'];  // saran; boleh diketik manual
     public const MEDIA_DEFAULT = 'WhatsApp';
 
@@ -131,6 +131,7 @@ class DailyIssue extends Model
     {
         $category = match ($this->status) {
             'done' => Category::DONE,
+            'other' => Category::OTHER,
             'onprogress', 'trouble' => Category::PROGRESS,
             default => Category::PENDING,
         };

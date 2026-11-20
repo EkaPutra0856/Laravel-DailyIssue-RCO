@@ -12,16 +12,19 @@ final class Report
     private const HEADINGS = [
         'pending' => '📌 <b>Pendingan Issue (Belum Dikerjakan):</b>',
         'progress' => '⏳ <b>Issue On Progress (Kuning):</b>',
+        'other' => '🟠 <b>Issue Other (Orange):</b>',
         'done' => '✅ <b>Issue Done (Hijau):</b>',
     ];
     private const EMPTY = [
         'pending' => '<i>Tidak ada issue pending</i>',
         'progress' => '<i>Tidak ada issue on progress</i>',
+        'other' => '<i>Tidak ada issue Other</i>',
         'done' => '<i>Tidak ada issue done</i>',
     ];
     private const TOTALS = [
         'pending' => 'Total Pending: %d Issue (Putih)',
         'progress' => 'Total On Progress: %d Issue (Kuning)',
+        'other' => 'Total Other: %d Issue (Orange)',
         'done' => 'Total Done: %d Issue (Hijau)',
     ];
     private const CLOSING = ['Mohon bantuannya untuk ditelusuri rekan-rekan engineer', 'Terima kasih.'];
@@ -114,7 +117,7 @@ final class Report
         if ($grandTotal && count($query->categories) > 1) {
             $lines[] = 'Total Keseluruhan: '.$count($query->categories).' Issue';
         }
-        if ($grandTotal && array_intersect(array_map(fn ($c) => $c->value, $query->categories), ['pending', 'progress'])) {
+        if ($grandTotal && array_intersect(array_map(fn ($c) => $c->value, $query->categories), ['pending', 'progress', 'other'])) {
             $lines = [...$lines, '', ...self::CLOSING];
         }
 
@@ -188,9 +191,10 @@ final class Report
             '📖 <b>Panduan Bot Handover</b>',
             '',
             '<b>Perintah</b>',
-            '/rekap — pending + on progress',
+            '/rekap — pending + on progress + Other',
             '/pending — hanya yang belum tersentuh (putih)',
             '/progress — hanya yang masih on going (kuning)',
+            '/other — hanya issue berstatus Other (orange)',
             '/done — hanya yang sudah selesai (hijau)',
             '/doneprogress — done &amp; on progress, 2 bubble chat',
             '/rekapdetail — rekap + nama aplikasi',
@@ -209,7 +213,7 @@ final class Report
             '<b>Tambahan</b>',
             '<code>detail</code> — tampilkan nama aplikasi, mis. <code>/pending Oktober detail</code>',
             '<code>pisah</code> — tiap kategori di bubble terpisah, mis. <code>/rekap Oktober pisah</code>',
-            '<code>pending progress done</code> — pilih kategori, mis. <code>/rekap done pending Oktober</code>',
+            '<code>pending progress other done</code> — pilih kategori, mis. <code>/rekap done pending Oktober</code>',
         ]);
     }
 }

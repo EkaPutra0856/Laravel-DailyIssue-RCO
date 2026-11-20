@@ -16,7 +16,7 @@ class ExportExcel
         'Pencatat Issue', 'Waktu Lapor', 'Status', 'PIC', 'Waktu Mulai', 'Tanggal Finish', 'Waktu Selesai',
         'Note', 'Aplikasi (IP)', 'Dokumentasi', 'Lampiran'];
     private const LEBAR_ISSUE = [6, 11, 60, 18, 10, 24, 16, 22, 16, 11, 12, 16, 11, 13, 12, 40, 20, 30, 28];
-    private const LEBAR_RINGKASAN = [16, 11, 13, 11, 11, 11];
+    private const LEBAR_RINGKASAN = [16, 11, 13, 11, 11, 11, 11];
 
     /**
      * @param  string[]  $teams  kosong berarti semua tim
@@ -82,7 +82,7 @@ class ExportExcel
     {
         $diunduh = CarbonImmutable::now(config('handover.timezone'))->format('d/m/Y H:i');
         $baris = [["Rekap Daily Issue RCO – {$periode}"], ["Diunduh {$diunduh}"], [],
-            ['Team', 'Pending', 'On Progress', 'Trouble', 'Done', 'Total']];
+            ['Team', 'Pending', 'On Progress', 'Trouble', 'Other', 'Done', 'Total']];
 
         $total = array_fill_keys(DailyIssue::STATUSES, 0);
         foreach (Teams::ALL as $tim) {
@@ -98,7 +98,7 @@ class ExportExcel
 
         $terakhir = count($baris) - 1;
         $sel = ['0:0' => XlsxWriter::TITLE, '1:0' => XlsxWriter::NORMAL];
-        foreach (range(0, 5) as $kolom) {
+        foreach (range(0, 6) as $kolom) {
             $sel["{$terakhir}:{$kolom}"] = XlsxWriter::HEADER;
         }
 

@@ -178,5 +178,5 @@
 @endsection
 
 @section('scripts')
-<script src="{{ asset('static/js/daily.js') }}" defer></script>
+<script src="{{ asset('static/js/daily.js') }}?v={{ filemtime(public_path('static/js/daily.js')) }}" defer></script>
 @endsection

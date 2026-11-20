@@ -6,5 +6,6 @@ enum Category: string
 {
     case PENDING = 'pending';    // Putih: belum disentuh
     case PROGRESS = 'progress';  // Kuning: sedang dikerjakan
+    case OTHER = 'other';        // Orange: status lain
     case DONE = 'done';          // Hijau / status selesai
 }

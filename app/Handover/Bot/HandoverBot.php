@@ -17,9 +17,10 @@ use Throwable;
 final class HandoverBot
 {
     public const MENU = [
-        ['rekap', 'Rekap pending + on progress'],
+        ['rekap', 'Rekap pending + on progress + Other'],
         ['pending', 'Hanya issue belum tersentuh'],
         ['progress', 'Hanya issue on going'],
+        ['other', 'Hanya issue berstatus Other'],
         ['done', 'Hanya issue selesai'],
         ['doneprogress', 'Done & on progress (2 bubble)'],
         ['rekapdetail', 'Rekap + nama aplikasi'],

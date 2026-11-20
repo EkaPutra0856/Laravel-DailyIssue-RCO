@@ -4,6 +4,7 @@
     <span class="f-label">Periode</span>
     <div class="seg" id="presets">
       <button data-p="today">Hari ini</button>
+      <button data-p="twodays">2 Hari</button>
       <button data-p="yesterday">Kemarin</button>
       <button data-p="week">Minggu ini</button>
       <button data-p="lastweek">Minggu lalu</button>

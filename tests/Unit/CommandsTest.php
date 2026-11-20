@@ -64,12 +64,13 @@ class CommandsTest extends TestCase
     public function test_commands_categories_and_flags(): void
     {
         $q = Commands::parse('/rekap Oktober', self::today());
-        $this->assertSame([Category::PENDING, Category::PROGRESS], $q->categories);
+        $this->assertSame([Category::PENDING, Category::PROGRESS, Category::OTHER], $q->categories);
         $this->assertFalse($q->detail);
         $this->assertFalse($q->split);
 
         $q = Commands::parse('/rekapdetail@HandoverBot Oktober 2026', self::today());
         $this->assertTrue($q->detail);
+        $this->assertSame([Category::PENDING, Category::PROGRESS, Category::OTHER], $q->categories);
         $this->assertSame('2026-10-01', $q->start->toDateString());
 
         $q = Commands::parse('/pending 13 Oktober 2026 detail', self::today());
@@ -78,6 +79,7 @@ class CommandsTest extends TestCase
         $this->assertSame('2026-10-13', $q->start->toDateString());
 
         $this->assertSame([Category::PROGRESS], Commands::parse('/progress', self::today())->categories);
+        $this->assertSame([Category::OTHER], Commands::parse('/other Oktober', self::today())->categories);
         $this->assertSame([Category::DONE], Commands::parse('/done Oktober', self::today())->categories);
 
         $q = Commands::parse('/doneprogress Oktober', self::today());

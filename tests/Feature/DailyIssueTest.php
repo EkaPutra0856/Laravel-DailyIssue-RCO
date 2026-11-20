@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Handover\Commands;
+use App\Handover\Category;
 use App\Handover\Dates;
 use App\Handover\IssueProvider;
 use App\Handover\Report;
@@ -42,7 +43,7 @@ class DailyIssueTest extends TestCase
     public function test_page_renders_in_portal_style(): void
     {
         $this->get('/')->assertOk()->assertSee('PortalRCO')->assertSee('Daily Issue RCO')
-            ->assertSee('static/js/daily.js')->assertSee('Catat Issue');
+            ->assertSee('static/js/daily.js')->assertSee('Catat Issue')->assertSee('2 Hari');
         $this->get('/?embed=1')->assertOk()->assertSee('class="embed"', false);
     }
 
@@ -78,11 +79,21 @@ class DailyIssueTest extends TestCase
 
         $this->putJson($url, ['status' => 'onprogress', 'pic' => ''])->assertStatus(422)->assertJsonPath('error', 'PIC wajib diisi.');
         $this->putJson($url, ['status' => 'pending', 'pic' => 'Hendrik'])->assertStatus(422)
-            ->assertJsonPath('error', 'Status harus On Progress, Trouble, atau Done.');
+            ->assertJsonPath('error', 'Status harus On Progress, Trouble, Other, atau Done.');
         $this->assertSame('pending', DailyIssue::find($id)->status);
 
         $row = $this->putJson($url, ['status' => 'onprogress', 'pic' => 'Hendrik', 'waktu_mulai' => '09:30'])->assertOk()->json();
         $this->assertSame(['onprogress', 'Hendrik', '09:30'], [$row['status'], $row['pic'], $row['waktu_mulai']]);
+
+        $row = $this->putJson($url, ['status' => 'other', 'pic' => 'Hendrik'])->assertOk()->json();
+        $this->assertSame('other', $row['status']);
+        $this->assertSame(Category::OTHER, DailyIssue::find($id)->toIssue()->category);
+        $preview = $this->postJson('/api/preview', [
+            'start' => $row['tanggal'], 'end' => $row['tanggal'], 'categories' => ['other'],
+            'keys' => ["{$row['bulan']}#{$row['nomor']}"],
+        ])->assertOk()->json('messages.0');
+        $this->assertStringContainsString('🟠 <b>Issue Other (Orange):</b>', $preview);
+        $this->assertStringContainsString('Total Other: 1 Issue (Orange)', $preview);
 
         $row = $this->putJson($url, ['status' => 'done', 'pic' => 'Hendrik', 'waktu_mulai' => '09:30',
             'tanggal_finish' => '2026-11-05', 'waktu_selesai' => '10:05'])->assertOk()->json();

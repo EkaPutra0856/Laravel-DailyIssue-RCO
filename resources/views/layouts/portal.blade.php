@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>@yield('title') – PortalRCO</title>
 <link rel="icon" href="{{ asset('static/favicon.svg') }}" type="image/svg+xml">
-<link rel="stylesheet" href="{{ asset('static/css/portal.css') }}">
+<link rel="stylesheet" href="{{ asset('static/css/portal.css') }}?v={{ filemtime(public_path('static/css/portal.css')) }}">
 </head>
 {{-- ?embed=1: ditampilkan di dalam web portal (iframe), jadi topbar & sidebar milik halaman ini disembunyikan. --}}
 <body class="{{ request()->boolean('embed') ? 'embed' : '' }}" data-page="@yield('page')">

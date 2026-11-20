@@ -11,13 +11,15 @@ final class Commands
     public static function all(): array
     {
         return [
-            'rekap' => [[Category::PENDING, Category::PROGRESS], false, false],
-            'rekapdetail' => [[Category::PENDING, Category::PROGRESS], true, false],
+            'rekap' => [[Category::PENDING, Category::PROGRESS, Category::OTHER], false, false],
+            'rekapdetail' => [[Category::PENDING, Category::PROGRESS, Category::OTHER], true, false],
             'pending' => [[Category::PENDING], false, false],
             'belum' => [[Category::PENDING], false, false],
             'progress' => [[Category::PROGRESS], false, false],
             'ongoing' => [[Category::PROGRESS], false, false],
             'onprogress' => [[Category::PROGRESS], false, false],
+            'other' => [[Category::OTHER], false, false],
+            'lainnya' => [[Category::OTHER], false, false],
             'done' => [[Category::DONE], false, false],
             'selesai' => [[Category::DONE], false, false],
             'doneprogress' => [[Category::DONE, Category::PROGRESS], false, true],
@@ -27,6 +29,7 @@ final class Commands
     private const CATEGORY_WORDS = [
         'pending' => Category::PENDING, 'belum' => Category::PENDING, 'putih' => Category::PENDING,
         'progress' => Category::PROGRESS, 'ongoing' => Category::PROGRESS, 'kuning' => Category::PROGRESS,
+        'other' => Category::OTHER, 'lainnya' => Category::OTHER, 'orange' => Category::OTHER,
         'done' => Category::DONE, 'selesai' => Category::DONE, 'hijau' => Category::DONE,
     ];
 

@@ -335,7 +335,7 @@ Body JSON lebih dari 2 MB ditolak `413`.
 | `aplikasi`         | varchar(150), index | polisi        | Ejaan diseragamkan lewat tabel `aplikasi`                     |
 | `team`             | varchar(20), index | polisi         | `Tim 1` / `Tim 2` / `Tim 3` / `ALL TEAM`                      |
 | `pelapor`, `media_laporan`, `penerima_laporan`, `pencatat_issue` | varchar | polisi |                                           |
-| `status`           | varchar(20), index | engineer       | `pending` / `onprogress` / `trouble` / `done`                 |
+| `status`           | varchar(20), index | engineer       | `pending` / `onprogress` / `trouble` / `other` / `done`        |
 | `pic`              | varchar(100)      | engineer        |                                                               |
 | `waktu_mulai`, `tanggal_finish`, `waktu_selesai` | time/date | engineer |                                                     |
 | `note`, `aplikasi_ip`, `dokumentasi` | text  | engineer        | **Tidak pernah ikut pesan Telegram**                          |
@@ -378,9 +378,9 @@ baru kemudian menambahkan constraint `UNIQUE`.
 **Konstanta status**
 
 ```php
-STATUSES          = ['pending', 'onprogress', 'trouble', 'done'];
-ENGINEER_STATUSES = ['onprogress', 'trouble', 'done'];   // engineer tidak boleh mengembalikan ke pending
-STATUS_LABEL      = ['pending' => 'Pending', 'onprogress' => 'On Progress', ...];
+STATUSES          = ['pending', 'onprogress', 'trouble', 'other', 'done'];
+ENGINEER_STATUSES = ['onprogress', 'trouble', 'other', 'done'];   // engineer tidak boleh mengembalikan ke pending
+STATUS_LABEL      = ['pending' => 'Pending', 'onprogress' => 'On Progress', 'trouble' => 'Trouble', 'other' => 'Other', 'done' => 'Done'];
 ```
 
 Konstanta ini dikirim ke Blade dan ke JavaScript (lewat atribut `data-*`), jadi daftar status hanya ditulis sekali.
@@ -429,6 +429,7 @@ Contoh pemakaian: `DailyIssue::periode($awal, $akhir)->terbaru()->with('lampiran
   | pending     | PENDING        | –                         |
   | onprogress  | PROGRESS       | –                         |
   | trouble     | PROGRESS       | `🔴 (trouble)`           |
+  | other       | OTHER          | `🟠 (Other)`             |
   | done        | DONE           | –                         |
 
   `sheet` diisi `bulan` (mis. `"2026-11"`), sehingga kunci `"2026-11#5"` tetap unik walau rekap lintas bulan.
@@ -524,7 +525,7 @@ Kelas-kelas ini adalah porting satu-satu dari modul Python (`commands.py`, `rule
 
 | Kelas       | Isi                                                                                      |
 | ----------- | ---------------------------------------------------------------------------------------- |
-| `Category`  | enum `PENDING` / `PROGRESS` / `DONE` (string-backed: `Category::from('done')`)           |
+| `Category`  | enum `PENDING` / `PROGRESS` / `OTHER` / `DONE` (string-backed: `Category::from('done')`) |
 | `Teams::ALL` | `['Tim 1', 'Tim 2', 'Tim 3', 'ALL TEAM']` – juga menentukan urutan tampil               |
 | `Query`     | `start`, `end`, `categories`, `detail`, `split`, `teams`                                 |
 | `Issue`     | Satu issue untuk rekap: `sheet`, `issueNo`, `tanggal`, `team`, `aplikasi`, `status`, `pic`, `category`, `doneReason`, `waitingExternal`, `trouble`, `ref`. `label()` = PIC, atau tim bila PIC kosong |
@@ -740,7 +741,7 @@ xl/worksheets/sheet1.xml, sheet2.xml, ...
 ```
 
 Fitur: beberapa sheet, baris judul tebal + dibekukan + filter otomatis, lebar kolom, teks terbungkus, dan warna latar
-per baris (`FILLS` per status).
+per baris (`FILLS` per status; Other berwarna orange).
 
 [`ExportExcel`](../app/Services/Daily/ExportExcel.php) membuat dua sheet:
 

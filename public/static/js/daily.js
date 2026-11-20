@@ -152,6 +152,7 @@
         };
         st.preset = p;
         if (p === "today") [st.start, st.end] = [d(0), d(0)];
+        if (p === "twodays") [st.start, st.end] = [d(-1), d(0)];
         if (p === "yesterday") [st.start, st.end] = [d(-1), d(-1)];
         const dow = (t.getDay() + 6) % 7; // Senin = 0
         if (p === "week") [st.start, st.end] = [d(-dow), d(0)];
@@ -485,7 +486,7 @@
         if (st.loading && !st.rows.length) $("#empty").hidden = true;
     }
 
-    // Chip tim & kategori + panel Per Tim (bar: pending, on progress, trouble, done)
+    // Chip tim & kategori + panel Per Tim, dengan bar untuk tiap status.
     function renderFilters() {
         $$("#team-chips .chip").forEach((b) =>
             b.classList.toggle("on", st.teams.has(b.dataset.t)),
@@ -500,9 +501,10 @@
             );
             const tot = rows.length || 1;
             const parts = [
-                `${c.pending} pending`,
-                `${c.onprogress} progress`,
-                c.trouble ? `${c.trouble} trouble` : "",
+                `${c.pending} pend.`,
+                `${c.onprogress} prog.`,
+                c.trouble ? `${c.trouble} trbl.` : "",
+                `${c.other} Other`,
                 `${c.done} done`,
             ].filter(Boolean);
             return `<div class="team-row ${st.teams.has(t) ? "" : "off"}">
@@ -890,14 +892,14 @@
         openModal("#m-progress");
     }
 
-    // Submit hanya aktif kalau PIC terisi dan status On Progress / Trouble / Done.
+    // Submit hanya aktif kalau PIC terisi dan status tindak lanjut valid.
     function updateSubmit() {
         const f = fProg.elements;
         const okStatus = ENGINEER_OK.includes(f.status.value);
         const okPic = f.pic.value.trim() !== "";
         $("#progress-submit").disabled = !(okStatus && okPic);
         const why = [];
-        if (!okStatus) why.push("pilih status On Progress, Trouble, atau Done");
+        if (!okStatus) why.push("pilih status On Progress, Trouble, Other, atau Done");
         if (!okPic) why.push("isi PIC");
         const hint = $("#submit-hint");
         hint.className = why.length ? "hint warn" : "hint";
@@ -908,7 +910,7 @@
     function onStatusChange() {
         const f = fProg.elements;
         if (
-            ["onprogress", "trouble", "done"].includes(f.status.value) &&
+            ENGINEER_OK.includes(f.status.value) &&
             !f.waktu_mulai.value
         )
             f.waktu_mulai.value = nowTime();
@@ -1001,6 +1003,7 @@
         pending: "pending",
         onprogress: "progress",
         trouble: "progress",
+        other: "other",
         done: "done",
     };
     let tgReq = 0,

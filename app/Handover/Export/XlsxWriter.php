@@ -16,9 +16,9 @@ final class XlsxWriter
     public const NORMAL = 0;
     public const HEADER = 1;
     public const WRAP = 2;
-    public const FILLS = ['pending' => 3, 'onprogress' => 4, 'trouble' => 5, 'done' => 6];  // baris berwarna (+ wrap)
-    public const TITLE = 7;
-    public const BOLD = 8;
+    public const FILLS = ['pending' => 3, 'onprogress' => 4, 'trouble' => 5, 'other' => 7, 'done' => 6];  // baris berwarna (+ wrap)
+    public const TITLE = 8;
+    public const BOLD = 9;
 
     /** @var array<int, array{name:string, rows:array, widths:array, header:int|null, wrap:array}> */
     private array $sheets = [];
@@ -124,7 +124,7 @@ final class XlsxWriter
 
     private static function styles(): string
     {
-        // Warna mengikuti legenda spreadsheet: putih = pending, kuning = on progress, orange = trouble, hijau = done.
+        // Warna mengikuti legenda spreadsheet: putih = pending, kuning = on progress, merah = trouble, orange = other, hijau = done.
         $fill = fn (string $rgb) => '<fill><patternFill patternType="solid"><fgColor rgb="FF'.$rgb.'"/><bgColor indexed="64"/></patternFill></fill>';
         $border = '<border><left style="thin"><color rgb="FFD9DEE8"/></left><right style="thin"><color rgb="FFD9DEE8"/></right>'
             .'<top style="thin"><color rgb="FFD9DEE8"/></top><bottom style="thin"><color rgb="FFD9DEE8"/></bottom><diagonal/></border>';
@@ -137,11 +137,11 @@ final class XlsxWriter
             .'<fonts count="3"><font><sz val="10"/><name val="Calibri"/></font>'
             .'<font><b/><sz val="10"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font>'
             .'<font><b/><sz val="13"/><color rgb="FF0A3D91"/><name val="Calibri"/></font></fonts>'
-            .'<fills count="8"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill>'
-            .$fill('0A3D91').$fill('FFFFFF').$fill('FFF2B3').$fill('FFC999').$fill('B7E1CD').'<fill><patternFill patternType="none"/></fill></fills>'
+            .'<fills count="9"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill>'
+            .$fill('0A3D91').$fill('FFFFFF').$fill('FFE066').$fill('FFC999').$fill('B7E1CD').$fill('FFE0B2').'<fill><patternFill patternType="none"/></fill></fills>'
             .'<borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border>'.$border.'</borders>'
             .'<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'
-            .'<cellXfs count="9">'
+            .'<cellXfs count="10">'
             .$xf(0, 0, false)          // 0 normal
             .$xf(1, 2, true)           // 1 judul kolom (biru tua, teks putih tebal)
             .$xf(0, 0, true)           // 2 teks terbungkus
@@ -149,8 +149,9 @@ final class XlsxWriter
             .$xf(0, 4, true)           // 4 on progress (kuning)
             .$xf(0, 5, true)           // 5 trouble (orange)
             .$xf(0, 6, true)           // 6 done (hijau)
-            .$xf(2, 0, false, 0)       // 7 judul laporan
-            .'<xf numFmtId="0" fontId="0" fillId="0" borderId="1" applyBorder="1"><alignment vertical="top"/></xf>'  // 8 tabel ringkasan
+            .$xf(0, 7, true)           // 7 other (orange)
+            .$xf(2, 0, false, 0)       // 8 judul laporan
+            .'<xf numFmtId="0" fontId="0" fillId="0" borderId="1" applyBorder="1"><alignment vertical="top"/></xf>'  // 9 tabel ringkasan
             .'</cellXfs>'
             .'<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>'
             .'</styleSheet>';

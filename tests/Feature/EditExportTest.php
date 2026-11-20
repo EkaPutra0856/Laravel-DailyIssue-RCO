@@ -85,6 +85,7 @@ class EditExportTest extends TestCase
         $a = $this->create(['waktu_lapor' => '2026-10-02T08:00', 'issue' => 'Issue <pertama> & "kutip"']);
         $b = $this->create(['waktu_lapor' => '2026-10-03T08:00', 'team' => 'Tim 1', 'aplikasi' => 'QRIS']);
         $this->create(['waktu_lapor' => '2026-11-01T08:00']);  // bulan lain: tidak ikut
+        $this->putJson("/api/daily/issues/{$a['id']}/tindak-lanjut", ['status' => 'other', 'pic' => 'Hendrik'])->assertOk();
         $this->putJson("/api/daily/issues/{$b['id']}/tindak-lanjut", ['status' => 'done', 'pic' => 'Elsa'])->assertOk();
 
         $res = $this->get('/api/daily/export?start=2026-10-01&end=2026-10-31')->assertOk();
@@ -104,9 +105,11 @@ class EditExportTest extends TestCase
         $this->assertNotFalse(simplexml_load_string($sheet));  // XML valid (teks di-escape)
         $this->assertStringContainsString('Issue &lt;pertama&gt; &amp; &quot;kutip&quot;', $sheet);
         $this->assertSame(3, substr_count($sheet, '<row '));   // judul + 2 issue Oktober
+        $this->assertStringContainsString('<c r="K2" s="7" t="inlineStr"><is><t xml:space="preserve">Other</t>', $sheet);
         $this->assertStringContainsString('<c r="K3" s="6" t="inlineStr"><is><t xml:space="preserve">Done</t>', $sheet);  // baris done hijau
         $this->assertStringContainsString('<autoFilter ref="A1:S3"/>', $sheet);
         $this->assertStringContainsString('Rekap Daily Issue RCO – Oktober 2026', $summary);
+        $this->assertStringContainsString('Other', $summary);
     }
 
     public function test_polisi_deletes_issue_softly(): void

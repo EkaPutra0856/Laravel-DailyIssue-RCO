@@ -88,9 +88,14 @@ class ReportTest extends TestCase
 07/10/2026 — Tim 2 — Issue 8 — Tim 2
 13/10/2026 — Tim 2 — Issue 13 — Puji
 
+🟠 <b>Issue Other (Orange):</b>
+
+<i>Tidak ada issue Other</i>
+
 ------------------------------------
 Total Pending: 4 Issue (Putih)
 Total On Progress: 3 Issue (Kuning)
+Total Other: 0 Issue (Orange)
 Total Keseluruhan: 7 Issue
 
 Mohon bantuannya untuk ditelusuri rekan-rekan engineer
