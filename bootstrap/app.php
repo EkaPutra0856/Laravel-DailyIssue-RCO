@@ -20,6 +20,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Di hosting (Render, dll.) request datang lewat proxy HTTPS: percayai header X-Forwarded-*.
+        $middleware->trustProxies(at: '*');
         $middleware->append(SecurityHeaders::class);
         // API memakai sesi yang sama dengan halaman, untuk memeriksa login portal (lihat PortalLogin).
         $middleware->api(prepend: [

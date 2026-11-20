@@ -1,0 +1,66 @@
+# Blueprint Render: web dashboard (Docker) + database PostgreSQL.
+# Bot Telegram belum ikut (Background Worker berbayar); tetap jalan di PC lewat run-bot.ps1.
+services:
+  - type: web
+    name: daily-issue-rco
+    runtime: docker
+    plan: free
+    region: singapore
+    healthCheckPath: /up
+    envVars:
+      - key: APP_NAME
+        value: Handover RCO
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_KEY
+        generateValue: true
+      - key: APP_TIMEZONE
+        value: Asia/Jakarta
+      - key: APP_LOCALE
+        value: id
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: LOG_LEVEL
+        value: info
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_URL
+        fromDatabase:
+          name: daily-issue-rco-db
+          property: connectionString
+      - key: SESSION_DRIVER
+        value: database
+      - key: CACHE_STORE
+        value: database
+      - key: QUEUE_CONNECTION
+        value: sync
+      # Web terbuka ke internet: wajib ada login. Password dibuat acak oleh Render,
+      # lihat/ganti di tab Environment. Username bebas.
+      - key: WEB_PASSWORD
+        generateValue: true
+      # Diisi sendiri di dashboard Render (rahasia, tidak disimpan di repo).
+      - key: APPS_SCRIPT_URL
+        sync: false
+      - key: APPS_SCRIPT_KEY
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: ALLOWED_CHAT_IDS
+        sync: false
+      - key: WEB_CHAT_ID
+        sync: false
+      - key: PORTAL_URL
+        sync: false
+      - key: PORTAL_ORIGIN
+        sync: false
+      - key: PORTAL_SSO_SECRET
+        sync: false
+
+databases:
+  - name: daily-issue-rco-db
+    plan: free
+    region: singapore
+    databaseName: handover_rco
+    user: handover
