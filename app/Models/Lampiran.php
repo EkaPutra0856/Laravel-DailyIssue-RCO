@@ -31,13 +31,6 @@ class Lampiran extends Model
 
     public function toRow(): array
     {
-        return [
-            'id' => $this->id,
-            'nama' => $this->nama,
-            'mime' => $this->mime,
-            'ukuran' => $this->ukuran,
-            'gambar' => $this->isGambar(),
-            'url' => url("/api/daily/lampiran/{$this->id}"),
-        ];
+        return (new \App\Http\Resources\LampiranResource($this))->resolve();
     }
 }

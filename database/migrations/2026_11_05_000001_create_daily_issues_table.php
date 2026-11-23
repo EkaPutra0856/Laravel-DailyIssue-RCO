@@ -12,6 +12,11 @@ return new class extends Migration
         Schema::create('daily_issues', function (Blueprint $table) {
             $table->id();
 
+            // Nomor urut bulanan (reset ke 1 setiap awal bulan)
+            $table->char('bulan', 7)->nullable()->index(); // mis. '2026-11'
+            $table->unsignedInteger('nomor')->nullable();
+            $table->unique(['bulan', 'nomor']);
+
             // Diisi polisi (pencatat issue)
             $table->date('tanggal')->index();
             $table->time('waktu_lapor')->nullable();
@@ -24,33 +29,30 @@ return new class extends Migration
             $table->string('pencatat_issue', 100)->default('');
 
             // Diisi engineer (penyelesai issue)
-            $table->string('status', 20)->default('pending')->index();  // pending / onprogress / trouble / done
+            $table->string('status', 20)->default('pending')->index();  // pending / onprogress / trouble / other / done
+            $table->boolean('follow_up')->default(false)->index();
             $table->string('pic', 100)->default('');
             $table->time('waktu_mulai')->nullable();
             $table->date('tanggal_finish')->nullable();
             $table->time('waktu_selesai')->nullable();
+            $table->text('note')->nullable();
+            $table->string('aplikasi_ip', 150)->nullable();
+            $table->string('dokumentasi', 255)->nullable();
 
             // Asal data hasil impor dari spreadsheet (null untuk issue yang diinput di web)
             $table->string('sumber_tab', 100)->nullable();
             $table->unsignedInteger('sumber_baris')->nullable();
             $table->unique(['sumber_tab', 'sumber_baris']);
+            $table->timestamp('diubah_web_at')->nullable()->index();
 
             $table->timestamps();
-        });
-
-        // Aplikasi -> team penanggung jawab, untuk rekomendasi (autofill) dan konsistensi nama aplikasi.
-        Schema::create('aplikasi', function (Blueprint $table) {
-            $table->id();
-            $table->string('nama', 150)->unique();
-            $table->string('team', 20);
-            $table->unsignedInteger('jumlah_issue')->default(0);
-            $table->timestamps();
+            $table->string('dihapus_oleh', 100)->nullable();
+            $table->softDeletes();
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('aplikasi');
         Schema::dropIfExists('daily_issues');
     }
 };

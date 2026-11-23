@@ -95,35 +95,10 @@ class DailyIssue extends Model
         return $time ? substr($time, 0, 5) : null;
     }
 
-    /** Bentuk JSON untuk halaman Daily Issue. */
+    /** Bentuk JSON untuk halaman Daily Issue (didelegasikan ke DailyIssueResource). */
     public function toRow(): array
     {
-        return [
-            'id' => $this->id,
-            'nomor' => $this->nomor,     // nomor issue di bulannya (mulai 1 tiap bulan)
-            'bulan' => $this->bulan,
-            'tanggal' => $this->tanggal?->toDateString(),
-            'waktu_lapor' => self::hhmm($this->waktu_lapor),
-            'issue' => $this->issue,
-            'aplikasi' => $this->aplikasi,
-            'team' => $this->team,
-            'pelapor' => $this->pelapor,
-            'media_laporan' => $this->media_laporan,
-            'penerima_laporan' => $this->penerima_laporan,
-            'pencatat_issue' => $this->pencatat_issue,
-            'status' => $this->status,
-            'follow_up' => (bool) $this->follow_up,
-            'pic' => $this->pic,
-            'waktu_mulai' => self::hhmm($this->waktu_mulai),
-            'tanggal_finish' => $this->tanggal_finish?->toDateString(),
-            'waktu_selesai' => self::hhmm($this->waktu_selesai),
-            'note' => (string) $this->note,
-            'aplikasi_ip' => (string) $this->aplikasi_ip,
-            'dokumentasi' => (string) $this->dokumentasi,
-            'sumber' => $this->sumber_tab ? "{$this->sumber_tab} baris {$this->sumber_baris}" : null,
-            'updated_at' => $this->updated_at?->toIso8601String(),
-            'lampiran' => $this->lampiran->map(fn (Lampiran $l) => $l->toRow())->all(),
-        ];
+        return (new \App\Http\Resources\DailyIssueResource($this))->resolve();
     }
 
     /** Ubah ke Issue rekap (dipakai dashboard rekap & bot). Trouble dihitung on progress dengan tanda khusus. */
