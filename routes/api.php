@@ -34,7 +34,7 @@ Route::middleware([WebPassword::class, PortalLogin::class, RequireJson::class])-
         });
 
         // Tindak lanjut engineer
-        Route::put('/issues/{issue}/tindak-lanjut', [TindakLanjutController::class, 'update']);
+        Route::match(['PUT', 'POST'], '/issues/{issue}/tindak-lanjut', [TindakLanjutController::class, 'update']);
 
         // Panel Issue Follow-up
         Route::get('/follow-ups', [FollowUpController::class, 'index']);

@@ -825,6 +825,8 @@
         "7z",
     ];
     let newFiles = [];
+    let progressFiles = [];
+    let progressRemoveIds = new Set();
 
     function addFiles(list) {
         const errors = [];
@@ -873,8 +875,73 @@
             .join("");
     }
 
+    function renderProgressOldFiles() {
+        const box = $("#progress-att-old");
+        const att = st.current?.lampiran || [];
+        box.hidden = !att.length;
+        box.innerHTML = att
+            .map((a) => {
+                const del = progressRemoveIds.has(a.id);
+                const thumb = a.gambar
+                    ? `<img src="${esc(a.url)}" alt="">`
+                    : `<span class="file-ico">${esc(ext(a.nama))}</span>`;
+                return `<div class="att-item${del ? " removed" : ""}">${thumb}<span><span class="att-name" title="${esc(a.nama)}">${esc(a.nama)}</span><br>
+        <span class="att-size">${del ? "akan dihapus" : fmtSize(a.ukuran)}</span></span>
+        <button type="button" class="att-del" data-progress-old="${a.id}" aria-label="${del ? "Batal hapus" : "Hapus"} ${esc(a.nama)}">${del ? "↺" : "×"}</button></div>`;
+            })
+            .join("");
+    }
+
+    function renderProgressFiles() {
+        $$("#progress-att-new img").forEach((img) => URL.revokeObjectURL(img.src));
+        $("#progress-att-new").innerHTML = progressFiles
+            .map((f, i) => {
+                const thumb = f.type.startsWith("image/")
+                    ? `<img src="${URL.createObjectURL(f)}" alt="">`
+                    : `<span class="file-ico">${esc(ext(f.name))}</span>`;
+                return `<div class="att-item">${thumb}<span><span class="att-name" title="${esc(f.name)}">${esc(f.name)}</span><br>
+        <span class="att-size">${fmtSize(f.size)}</span></span><button type="button" class="att-del" data-progress-i="${i}" aria-label="Hapus ${esc(f.name)}">×</button></div>`;
+            })
+            .join("");
+    }
+
+    function addProgressFiles(list) {
+        const errors = [];
+        for (let f of list) {
+            if (/^image\.(png|jpe?g|gif|webp)$/i.test(f.name)) {
+                const d = new Date();
+                f = new File(
+                    [f],
+                    `screenshot-${isoDate(d)}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}.${f.name.split(".").pop()}`,
+                    { type: f.type },
+                );
+            }
+            const e = f.name.split(".").pop().toLowerCase();
+            if (!OK_EXT.includes(e)) {
+                errors.push(`${f.name}: jenis file tidak didukung`);
+                continue;
+            }
+            if (f.size > MAX_BYTES) {
+                errors.push(`${f.name}: lebih dari 10 MB`);
+                continue;
+            }
+            const kept = (st.current?.lampiran || []).filter(
+                (a) => !progressRemoveIds.has(a.id),
+            ).length;
+            if (kept + progressFiles.length >= MAX_FILES) {
+                errors.push(`Maksimal ${MAX_FILES} lampiran`);
+                break;
+            }
+            progressFiles.push(f);
+        }
+        renderProgressFiles();
+        if (errors.length) Portal.toast(errors.join(" · "), true);
+    }
+
     function openProgress(r) {
         st.current = r;
+        progressFiles = [];
+        progressRemoveIds.clear();
         clearFormError(fProg);
         $("#m-progress-t").textContent = `Tindak Lanjut ${issueLabel(r)}`;
         $("#progress-summary").outerHTML =
@@ -888,6 +955,8 @@
         f.note.value = r.note || "";
         f.aplikasi_ip.value = r.aplikasi_ip || "";
         f.dokumentasi.value = r.dokumentasi || "";
+        renderProgressOldFiles();
+        renderProgressFiles();
         onStatusChange();
         openModal("#m-progress");
     }
@@ -926,13 +995,15 @@
         e.preventDefault();
         if ($("#progress-submit").disabled) return;
         clearFormError(fProg);
-        const body = Object.fromEntries(new FormData(fProg).entries());
+        const body = new FormData(fProg);
+        progressFiles.forEach((f) => body.append("lampiran[]", f, f.name));
+        progressRemoveIds.forEach((id) => body.append("hapus_lampiran[]", id));
         const btn = $("#progress-submit");
         btn.disabled = true;
         try {
             const row = await api(
                 `api/daily/issues/${st.current.id}/tindak-lanjut`,
-                "PUT",
+                "POST",
                 body,
             );
             closeModal($("#m-progress"));
@@ -1256,6 +1327,54 @@
             if (del) {
                 newFiles.splice(Number(del.dataset.i), 1);
                 renderNewFiles();
+            }
+        });
+        $("#progress-att-old").addEventListener("click", (e) => {
+            const del = e.target.closest("[data-progress-old]");
+            if (!del) return;
+            const id = Number(del.dataset.progressOld);
+            progressRemoveIds.has(id)
+                ? progressRemoveIds.delete(id)
+                : progressRemoveIds.add(id);
+            renderProgressOldFiles();
+        });
+        $("#progress-att-new").addEventListener("click", (e) => {
+            const del = e.target.closest("[data-progress-i]");
+            if (!del) return;
+            progressFiles.splice(Number(del.dataset.progressI), 1);
+            renderProgressFiles();
+        });
+
+        const progressInput = $("#progress-file-input");
+        $("#progress-pick-files").addEventListener("click", () =>
+            progressInput.click(),
+        );
+        progressInput.addEventListener("change", () => {
+            addProgressFiles(progressInput.files);
+            progressInput.value = "";
+        });
+        const progressDz = $("#progress-dropzone");
+        ["dragenter", "dragover"].forEach((t) =>
+            $("#m-progress").addEventListener(t, (e) => {
+                e.preventDefault();
+                progressDz.classList.add("over");
+            }),
+        );
+        ["dragleave", "drop"].forEach((t) =>
+            $("#m-progress").addEventListener(t, (e) => {
+                e.preventDefault();
+                progressDz.classList.remove("over");
+            }),
+        );
+        $("#m-progress").addEventListener("drop", (e) => {
+            if (e.dataTransfer?.files.length)
+                addProgressFiles(e.dataTransfer.files);
+        });
+        $("#m-progress").addEventListener("paste", (e) => {
+            const files = [...(e.clipboardData?.files || [])];
+            if (files.length) {
+                e.preventDefault();
+                addProgressFiles(files);
             }
         });
         // Lampiran lama saat edit: klik × untuk tandai hapus, klik ↺ untuk batal

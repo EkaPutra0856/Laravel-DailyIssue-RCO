@@ -115,7 +115,17 @@
         <label class="field">Aplikasi (IP)<textarea name="aplikasi_ip" rows="2" maxlength="2000" placeholder="mis. 172.18.x.x&#10;DB : nama database"></textarea></label>
         <label class="field span2">Note<textarea name="note" rows="3" maxlength="20000" placeholder="Catatan pengerjaan, query, langkah yang sudah dilakukan"></textarea></label>
         <label class="field span2">Dokumentasi<textarea name="dokumentasi" rows="2" maxlength="20000" placeholder="Link dokumentasi / folder Drive / keterangan"></textarea>
-          <span class="hint">Tidak ikut dikirim ke Telegram</span></label>
+        <div class="field span2">
+          <span>Lampiran Gambar/File Dokumentasi <span class="hint">opsional · maks 10 file, 10 MB per file</span></span>
+          <div class="dropzone" id="progress-dropzone">
+            <input type="file" id="progress-file-input" multiple hidden
+                   accept="image/jpeg,image/png,image/gif,image/webp,image/bmp,.pdf,.doc,.docx,.xls,.xlsx,.csv,.ppt,.pptx,.txt,.log,.zip,.rar,.7z">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 11-8.5 8.5a5 5 0 0 1-7-7L14 4a3.5 3.5 0 0 1 5 5l-8.5 8.5a2 2 0 0 1-3-3L15 7"/></svg>
+            <span>Tarik file ke sini, <button type="button" class="link" id="progress-pick-files">pilih file</button>, atau tempel screenshot (Ctrl+V)</span>
+          </div>
+          <div class="att-list" id="progress-att-old" hidden></div>
+          <div class="att-list" id="progress-att-new"></div>
+        </div>
       </div>
       <p class="hint" id="submit-hint"></p>
       <p class="form-error" hidden></p>
